@@ -1,0 +1,74 @@
+/* Bootstrap-like button styles for Streamlit */
+
+/* Primary */
+.st-key-primary button {
+    background-color: #0d6efd !important;
+    color: white !important;
+}
+.st-key-primary button:hover {
+    background-color: #0b5ed7 !important;
+}
+
+/* Secondary */
+.st-key-secondary button {
+    background-color: #6c757d !important;
+    color: white !important;
+}
+.st-key-secondary button:hover {
+    background-color: #5c636a !important;
+}
+
+/* Success */
+.st-key-success button {
+    background-color: #198754 !important;
+    color: white !important;
+}
+.st-key-success button:hover {
+    background-color: #157347 !important;
+}
+
+/* Danger */
+.st-key-danger button {
+    background-color: #dc3545 !important;
+    color: white !important;
+}
+.st-key-danger button:hover {
+    background-color: #bb2d3b !important;
+}
+
+/* Warning */
+.st-key-warning button {
+    background-color: #ffc107 !important;
+    color: black !important;
+}
+.st-key-warning button:hover {
+    background-color: #ffca2c !important;
+}
+
+/* Info */
+.st-key-info button {
+    background-color: #0dcaf0 !important;
+    color: black !important;
+}
+.st-key-info button:hover {
+    background-color: #31d2f2 !important;
+}
+
+/* Light */
+.st-key-light button {
+    background-color: #f8f9fa !important;
+    color: black !important;
+    border: 1px solid #dee2e6 !important;
+}
+.st-key-light button:hover {
+    background-color: #e2e6ea !important;
+}
+
+/* Dark */
+.st-key-dark button {
+    background-color: #212529 !important;
+    color: white !important;
+}
+.st-key-dark button:hover {
+    background-color: #1c1f23 !important;
+}
