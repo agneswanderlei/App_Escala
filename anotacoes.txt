@@ -1,0 +1,2 @@
+criar uma pagina para o administrador da igreja adicionar o membro vinculado a igreja do adm.
+ao iniciar o app criar o perfil supervisor.
