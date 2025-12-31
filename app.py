@@ -64,15 +64,27 @@ pages = {
         os.path.join('Paginas','Home','Home.py')
     ],
     'Igrejas': [
-        os.path.join('Paginas','Igrejas','Home_Igreja.py'),
+        os.path.join('Paginas','Igrejas','Igrejas.py'),
         os.path.join('Paginas','Igrejas','Adicionar_Igreja.py'),
         os.path.join('Paginas','Igrejas','Editar_Igreja.py'),
 
     ],
-    'Funcoes': [
-        os.path.join('Paginas','Funcoes','Home_Funcao.py'),
-        os.path.join('Paginas','Funcoes','Adicionar_Funcao.py'),
-        os.path.join('Paginas','Funcoes','Editar_Funcao.py'),
+    'Participantes': [
+        # os.path.join('Paginas','Participantes','Participantes.py'),
+        os.path.join('Paginas','Participantes','Adicionar_Participante.py'),
+        # os.path.join('Paginas','Participantes','Editar_Participante.py'),
+
+    ],
+    'Grupos': [
+        os.path.join('Paginas','Grupos','Grupos.py'),
+        os.path.join('Paginas','Grupos','Adicionar_Grupo.py'),
+        os.path.join('Paginas','Grupos','Editar_Grupo.py'),
+
+    ],
+    'Funções': [
+        os.path.join('Paginas','Funcoes','Funções.py'),
+        os.path.join('Paginas','Funcoes','Adicionar_Função.py'),
+        os.path.join('Paginas','Funcoes','Editar_Função.py'),
 
     ],
     'Usuários': [

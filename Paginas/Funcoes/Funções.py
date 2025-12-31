@@ -5,7 +5,7 @@ from models import Funcoes, Usuarios
 st.set_page_config(layout='centered')
 session = SessionLocal()
 
-st.title("🏛️ Lista de Igrejas")
+st.title("🏛️ Lista de Funções")
 
 # Buscar todas as função cadastradas
 igreja_id = st.session_state.get("igreja")
