@@ -102,6 +102,7 @@ class Eventos(Base):
 
 
 class Escalas(Base):
+
     __tablename__ = "escalas"
     id = Column(Integer, primary_key=True, autoincrement=True)
     evento_id = Column(Integer, ForeignKey("eventos.id"))
@@ -113,3 +114,26 @@ class Escalas(Base):
     ministerio = relationship("Ministerios", back_populates="escalas")
     membro = relationship("Membros")
     funcao = relationship("Funcoes")  # relação direta com Funcoes
+
+class Liturgias(Base):
+    __tablename__ = "liturgias"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    nome = Column(String, nullable=False)
+    descricao = Column(String, nullable=True)
+    igreja_id = Column(Integer, ForeignKey("igrejas.id"), nullable=False)
+    evento_id = Column(Integer, ForeignKey("eventos.id"), nullable=False)
+
+    igreja = relationship("Igrejas", back_populates="liturgias")
+    evento = relationship("Eventos", back_populates="liturgias")
+    momentos = relationship("MomentosLiturgia", back_populates="liturgia", cascade="all, delete-orphan")
+
+class MomentosLiturgia(Base):
+    __tablename__ = "momentos_liturgia"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    horario = Column(Time, nullable=False)  # Ex: 09:00
+    descricao = Column(String, nullable=False)  # Ex: "Louvor"
+    responsavel_id = Column(Integer, ForeignKey("membros.id"), nullable=True)  # quem conduz
+
+    liturgia_id = Column(Integer, ForeignKey("liturgias.id"), nullable=False)
+    liturgia = relationship("Liturgias", back_populates="momentos")
+    responsavel = relationship("Membros")  # membro responsável

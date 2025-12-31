@@ -11,20 +11,24 @@ session = SessionLocal()
 st.markdown("""
     <style>
         .block-container {
-            padding-top: 1rem;
+            padding-top: 2rem;
         }
         h1 {
-            margin-top: 0;
+            margin-top: 100;
         }
     </style>
 """, unsafe_allow_html=True)
 # consultar banco usuarios
 usuarios = session.query(Usuarios).all()
 if len(usuarios) == 0:
-    # Add igreja global
-    igreja =Igrejas(nome='global')
-    session.add(igreja)
-    session.commit()
+    # Verifica se já existe igreja 'global'
+    igreja = session.query(Igrejas).filter_by(nome='global').first()
+    if not igreja:
+        igreja = Igrejas(nome='global')
+        session.add(igreja)
+        session.commit()
+
+
     admin_user = Usuarios(
         nome='Admin',
         cpf='777',
