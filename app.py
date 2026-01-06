@@ -33,13 +33,13 @@ if len(usuarios) == 0:
         nome='Admin',
         cpf='777',
         password=stauth.Hasher.hash('1012ar1987'),
-        perfil='Administrador',
+        perfil='Supervisor',
         igreja_id=igreja.id
     )
     session.add(admin_user)
     session.commit()
     session.close()
-    st.success('Administrador adicionado com sucesso!')
+    st.success('Supervisor adicionado com sucesso!')
     usuarios = session.query(Usuarios).all()
 
 credenciais = {
@@ -69,11 +69,21 @@ pages = {
         os.path.join('Paginas','Igrejas','Editar_Igreja.py'),
 
     ],
+    'Eventos': [
+        # os.path.join('Paginas','Eventos','Eventos.py'),
+        os.path.join('Paginas','Eventos','Adicionar_Evento.py'),
+        # os.path.join('Paginas','Eventos','Editar_Evento.py'),
+    ],
     'Participantes': [
-        # os.path.join('Paginas','Participantes','Participantes.py'),
+        os.path.join('Paginas','Participantes','Participantes.py'),
         os.path.join('Paginas','Participantes','Adicionar_Participante.py'),
-        # os.path.join('Paginas','Participantes','Editar_Participante.py'),
+        os.path.join('Paginas','Participantes','Editar_Participante.py'),
 
+    ],
+    'Indisponibilidades': [
+        os.path.join('Paginas','Indisponibilidade','Indisponibilidades.py'),
+        os.path.join('Paginas','Indisponibilidade','Adicionar_Indisponibilidade.py'),
+        os.path.join('Paginas','Indisponibilidade','Editar_Indisponibilidade.py'),
     ],
     'Grupos': [
         os.path.join('Paginas','Grupos','Grupos.py'),
@@ -88,11 +98,11 @@ pages = {
 
     ],
     'Usuários': [
-        os.path.join('Paginas','Usuarios','Home_Usuarios.py'),
-        os.path.join('Paginas','Usuarios','Adicionar_Usuarios.py'),
+        os.path.join('Paginas','Usuarios','Home_Usuários.py'),
+        os.path.join('Paginas','Usuarios','Adicionar_Usuários.py'),
         os.path.join('Paginas','Usuarios','Editar_Perfil.py'),
         os.path.join('Paginas','Usuarios','Editar_Senha.py'),
-        os.path.join('Paginas','Usuarios','Excluir_Usuarios.py'),
+        os.path.join('Paginas','Usuarios','Excluir_Usuários.py'),
 
     ]
 }
@@ -101,10 +111,14 @@ pages = {
 authenticator.login(captcha=False, max_login_attempts=3)
 
 if st.session_state.get('authentication_status'):
-    perfil_usuario = credenciais['usernames'][st.session_state['username']]['perfil']
-    st.session_state.perfil = credenciais['usernames'][st.session_state['username']]['perfil']
-    st.session_state.nome = credenciais['usernames'][st.session_state['username']]['nome']
-    st.session_state.igreja = credenciais['usernames'][st.session_state['username']]['igreja_id']
+    cpf_logado = st.session_state['username']
+    usuario_logado = session.query(Usuarios).filter_by(cpf=cpf_logado).first()
+
+    st.session_state['perfil'] = usuario_logado.perfil
+    st.session_state['nome'] = usuario_logado.nome
+    st.session_state['igreja'] = usuario_logado.igreja_id
+    st.session_state['user_id'] = usuario_logado.id 
+
     nome_igreja = session.query(Igrejas).get(st.session_state.igreja)
     with st.sidebar:
         st.markdown("### 👤 Usuário Logado")
@@ -114,23 +128,26 @@ if st.session_state.get('authentication_status'):
 
     perfil_usuario = credenciais['usernames'][st.session_state['username']]['perfil']
     st.session_state['perfil'] = perfil_usuario
-    if perfil_usuario == 'Administrador':
+    if perfil_usuario == 'Supervisor':
+        pg = st.navigation(pages, position='top', expanded=False)
+        pg.run()
+    elif perfil_usuario == 'Administrador':
         pg = st.navigation(pages, position='top', expanded=False)
         pg.run()
     elif perfil_usuario == 'Líder':
-        # pages = {
-        #     'Home': [
-        #         os.path.join('Paginas','Home','Home.py')
-        #     ],
-        #     'Usuários': [
-        #         os.path.join('paginas','Usuarios','Home_Usuarios.py'),
-        #         os.path.join('paginas','Usuarios','Adicionar_Usuarios.py'),
-        #         # os.path.join('paginas','Usuarios','Editar_Perfil.py'),
-        #         # os.path.join('paginas','Usuarios','Editar_Senha.py'),
-        #         # os.path.join('paginas','Usuarios','Excluir_Usuarios.py'),
+        pages = {
+            'Home': [
+                os.path.join('Paginas','Home','Home.py')
+            ],
+            'Usuários': [
+                os.path.join('paginas','Usuarios','Home_Usuários.py'),
+                os.path.join('paginas','Usuarios','Adicionar_Usuários.py'),
+                # os.path.join('paginas','Usuarios','Editar_Perfil.py'),
+                # os.path.join('paginas','Usuarios','Editar_Senha.py'),
+                # os.path.join('paginas','Usuarios','Excluir_Usuarios.py'),
 
-        #     ]
-        # }
+            ]
+        }
         pg = st.navigation(pages, position='top', expanded=False)
         pg.run()
     else:
@@ -138,7 +155,14 @@ if st.session_state.get('authentication_status'):
             'Home': [
                 os.path.join('Paginas','Home','Home.py')
             ],
-            
+            'Usuários': [
+                os.path.join('paginas','Usuarios','Home_Usuários.py'),
+                # os.path.join('paginas','Usuarios','Adicionar_Usuários.py'),
+                # os.path.join('paginas','Usuarios','Editar_Perfil.py'),
+                os.path.join('paginas','Usuarios','Editar_Senha.py'),
+                # os.path.join('paginas','Usuarios','Excluir_Usuarios.py'),
+
+            ]
         }
         pg = st.navigation(pages, position='top', expanded=False)
         pg.run()
