@@ -1,18 +1,25 @@
 import streamlit as st
 from db import SessionLocal
-from models import Participantes, Ministerios, Funcoes
+from models import Participantes, Indisponibilidades
 import time
 
-st.set_page_config(layout='centered')
+st.set_page_config(layout='centered', initial_sidebar_state='collapsed')
 with open('styles.css') as f:
     st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
 session = SessionLocal()
 
-st.title("✏️ Editar Participante")
+st.title("✏️ Editar Indisponibilidade")
 
 # Buscar todos os participantes cadastrados
-participantes = session.query(Participantes).all()
+perfil = st.session_state.get("perfil")
+igreja_id = st.session_state.get("igreja")
+if perfil == 'Supervisor':
+    participantes = session.query(Participantes).all()
+elif perfil == "Administrador":
+    participantes = session.query(Participantes).filter_by(igreja_id=igreja_id).all()
+else:
+    participantes = session.query(Participantes).filter_by(usuario_id=st.session_state.get('user_id')).all()
 
 if not participantes:
     st.warning("Nenhum participante cadastrado ainda.")
@@ -24,81 +31,59 @@ else:
         format_func=lambda x: f"{x} - {next((p.nome for p in participantes if p.id == x), '')}"
     )
 
-    participante_selecionado = session.query(Participantes).get(id_selecionado)
+    indisponibilidade = session.query(Indisponibilidades).filter_by(participante_id=id_selecionado)
+    ids_ind = [i.id for i in indisponibilidade]
+    id_selecionado_ind = st.selectbox(
+        'Selecione a indisponibilidade',
+        options=ids_ind,
+        format_func=lambda x: f"{x} - {next((i.data.strftime('%d/%m/%Y') for i in indisponibilidade if i.id == x), '')}"
+    )
+    ind_selecionada = session.query(Indisponibilidades).get(id_selecionado_ind)
+    if ind_selecionada:
+        with st.form("form_indisponibilidade", clear_on_submit=True):
+            with st.container(horizontal=True, vertical_alignment='bottom'):
+                data = st.date_input('Data', value=ind_selecionada.data, format='DD/MM/YYYY')
+                hora_inicio = st.time_input('Hora Inicial', value=ind_selecionada.hora_inicio)
+                hora_fim = st.time_input('Hora Final', value=ind_selecionada.hora_fim)
+            motivo = st.text_area('Motivo', value=ind_selecionada.motivo)
+            with st.container(horizontal=True, vertical_alignment='bottom'):
+                salvar = st.form_submit_button("Salvar alterações", key="success")
+                deletar = st.form_submit_button("Deletar", key="danger")
 
-    # Buscar ministérios e funções da igreja
-    ministerios = session.query(Ministerios).filter_by(igreja_id=participante_selecionado.igreja_id).all()
-    funcoes = session.query(Funcoes).filter_by(igreja_id=participante_selecionado.igreja_id).all()
+            if salvar:
+                try:
+                    ind_selecionada.data = data
+                    ind_selecionada.hora_inicio = hora_inicio
+                    ind_selecionada.hora_fim = hora_fim
+                    ind_selecionada.motivo = motivo
+                    session.commit()
+                    st.success("Indisponibilidade atualizada com sucesso!")
+                except Exception as e:
+                    session.rollback()
+                    st.error(f"Erro ao atualizar Indisponibilidade: {e}")
+                finally:
+                    session.close()
 
-    # IDs já vinculados
-    ministerios_ids = [m.id for m in participante_selecionado.ministerios]
-    funcoes_ids = [f.id for f in participante_selecionado.funcoes]
-
-    with st.form("form_editar"):
-        novo_nome = st.text_input("Novo nome do participante", value=participante_selecionado.nome)
-        telefone = st.text_input("Telefone", value=participante_selecionado.telefone)
-
-        ministerios_escolhidos = st.multiselect(
-            "Ministérios",
-            options=[f"{m.id} - {m.nome}" for m in ministerios],
-            default=[f"{m.id} - {m.nome}" for m in ministerios if m.id in ministerios_ids]
-        )
-
-        funcoes_escolhidas = st.multiselect(
-            "Funções",
-            options=[f"{f.id} - {f.nome}" for f in funcoes],
-            default=[f"{f.id} - {f.nome}" for f in funcoes if f.id in funcoes_ids]
-        )
-
-        with st.container(horizontal=True, vertical_alignment='bottom'):
-            salvar = st.form_submit_button("Salvar alterações", key="success")
-            deletar = st.form_submit_button("Deletar", key="danger")
-
-        if salvar:
-            try:
-                participante_selecionado.nome = novo_nome.strip()
-                participante_selecionado.telefone = telefone.strip()
-
-                # Atualizar ministérios
-                participante_selecionado.ministerios.clear()
-                for mid in ministerios_escolhidos:
-                    m_id = int(mid.split(" - ")[0])
-                    ministerio = session.query(Ministerios).get(m_id)
-                    participante_selecionado.ministerios.append(ministerio)
-
-                # Atualizar funções
-                participante_selecionado.funcoes.clear()
-                for fid in funcoes_escolhidas:
-                    f_id = int(fid.split(" - ")[0])
-                    funcao = session.query(Funcoes).get(f_id)
-                    participante_selecionado.funcoes.append(funcao)
-
-                session.commit()
-                st.success("Participante atualizado com sucesso!")
-            except Exception as e:
-                session.rollback()
-                st.error(f"Erro ao atualizar participante: {e}")
-            finally:
-                session.close()
-
-        if deletar:
-            @st.dialog("Confirmação de exclusão")
-            def confirmar_exclusao():
-                st.write(f"Tem certeza que deseja excluir o participante **{participante_selecionado.nome}**?")
-                col1, col2 = st.columns(2)
-                with col1:
-                    if st.button("✅ Confirmar exclusão"):
-                        try:
-                            session.delete(participante_selecionado)
-                            session.commit()
-                            st.success(f"Participante '{participante_selecionado.nome}' excluído com sucesso!")
-                            time.sleep(2)
+            if deletar:
+                @st.dialog("Confirmação de exclusão")
+                def confirmar_exclusao():
+                    st.write(f"Tem certeza que deseja excluir a Indisponibilidade **{ind_selecionada.data.strftime('%d/%m/%Y')}**?")
+                    
+                    with st.container(horizontal=True, vertical_alignment='bottom'):
+                        if st.button("✅ Confirmar exclusão"):
+                            try:
+                                session.delete(ind_selecionada)
+                                session.commit()
+                                st.success(f"Indisponibilidade '{ind_selecionada.data.strftime('%d/%m/%Y')}' excluída com sucesso!")
+                                time.sleep(2)
+                                st.rerun()
+                            except Exception as e:
+                                session.rollback()
+                                st.error(f"Erro ao excluir participante: {e}")
+                    
+                        if st.button("❌ Cancelar"):
                             st.rerun()
-                        except Exception as e:
-                            session.rollback()
-                            st.error(f"Erro ao excluir participante: {e}")
-                with col2:
-                    if st.button("❌ Cancelar"):
-                        st.rerun()
 
-            confirmar_exclusao()
+                confirmar_exclusao()
+    else:
+        st.info('O Participante não possui nenhuma indisponibilidade cadastrada!')           

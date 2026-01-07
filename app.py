@@ -155,6 +155,11 @@ if st.session_state.get('authentication_status'):
             'Home': [
                 os.path.join('Paginas','Home','Home.py')
             ],
+            'Indisponibilidades': [
+                os.path.join('Paginas','Indisponibilidade','Indisponibilidades.py'),
+                os.path.join('Paginas','Indisponibilidade','Adicionar_Indisponibilidade.py'),
+                os.path.join('Paginas','Indisponibilidade','Editar_Indisponibilidade.py'),
+            ],
             'Usuários': [
                 os.path.join('paginas','Usuarios','Home_Usuários.py'),
                 # os.path.join('paginas','Usuarios','Adicionar_Usuários.py'),

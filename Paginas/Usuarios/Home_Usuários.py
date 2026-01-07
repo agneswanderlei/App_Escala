@@ -32,7 +32,18 @@ if usuarios:
     with col3:
         perfil = st.multiselect('Perfil', options=[u.perfil for u in usuarios])
     with col4:
-        igreja_filtro = st.multiselect('Igreja', options=[u.igreja.nome for u in usuarios])
+        # Buscar todas as igrejas dos usuários
+        igrejas = [u.igreja.nome for u in usuarios if u.igreja]
+
+        # Remover duplicados mantendo a ordem
+        igrejas_unicas = list(dict.fromkeys(igrejas))
+
+        igreja_filtro = st.multiselect(
+            "Igreja",
+            options=igrejas_unicas
+        )
+
+        
 
     # Criar lista de dicionários para DataFrame (incluindo igreja)
     usuarios_dict = [

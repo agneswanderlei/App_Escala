@@ -1,65 +1,76 @@
 import streamlit as st
 from db import SessionLocal
-from models import Participantes, Ministerios, Funcoes
+from models import Indisponibilidades, Participantes, Ministerios
 
 st.set_page_config(layout='centered')
 session = SessionLocal()
 
-st.title("🏛️ Lista de Participantes")
+st.title("📅 Lista de Indisponibilidades")
 
 igreja_id = st.session_state.get("igreja")
+perfil = st.session_state.get('perfil')
 
-# Buscar todos os participantes da igreja
-participantes = session.query(Participantes).filter_by(igreja_id=igreja_id).all()
+# --- Buscar participantes conforme perfil ---
+if perfil == 'Supervisor':
+    participantes = session.query(Participantes).all()
+elif perfil == 'Administrador':
+    participantes = session.query(Participantes).filter_by(igreja_id=igreja_id).all()
+else:
+    participantes = session.query(Participantes).filter_by(usuario_id=st.session_state.get('user_id')).all()
 
 if not participantes:
     st.warning("Nenhum participante cadastrado ainda.")
-else:
-    # Buscar ministérios e funções da igreja
-    ministerios = session.query(Ministerios).filter_by(igreja_id=igreja_id).all()
-    funcoes = session.query(Funcoes).filter_by(igreja_id=igreja_id).all()
+    st.stop()
 
-    # --- Filtros ---
-    with st.expander("🔎 Filtros"):
-        filtro_nome = st.text_input("Filtrar por nome")
-        filtro_ministerios = st.multiselect(
-            "Filtrar por ministérios",
-            options=[m.nome for m in ministerios]
-        )
-        filtro_funcoes = st.multiselect(
-            "Filtrar por funções",
-            options=[f.nome for f in funcoes]
-        )
+# --- Filtro por ministério ---
+ministerios = {m.nome for p in participantes for m in p.ministerios}
+ministerio_selecionado = st.multiselect("Filtrar por ministério", options=sorted(ministerios))
 
-    # --- Aplicar filtros ---
-    participantes_filtrados = participantes
+if ministerio_selecionado:
+    participantes = [
+        p for p in participantes
+        if any(m.nome in ministerio_selecionado for m in p.ministerios)
+    ]
 
-    if filtro_nome:
-        participantes_filtrados = [p for p in participantes_filtrados if filtro_nome.lower() in p.nome.lower()]
+if not participantes:
+    st.info("Nenhum participante encontrado com esse filtro.")
+    st.stop()
 
-    if filtro_ministerios:
-        participantes_filtrados = [
-            p for p in participantes_filtrados
-            if any(m.nome in filtro_ministerios for m in p.ministerios)
-        ]
+# --- Select participante ---
+ids_part = [p.id for p in participantes]
+id_selecionado = st.selectbox(
+    'Selecione o participante',
+    options=ids_part,
+    format_func=lambda x: f"{x} - {next((p.nome for p in participantes if p.id == x), '')}"
+)
 
-    if filtro_funcoes:
-        participantes_filtrados = [
-            p for p in participantes_filtrados
-            if any(f.nome in filtro_funcoes for f in p.funcoes)
-        ]
+# --- Query base de indisponibilidades ---
+query_ind = session.query(Indisponibilidades).filter_by(participante_id=id_selecionado)
 
-    # --- Montar dados para tabela ---
-    dados = []
-    for p in participantes_filtrados:
-        dados.append({
-            "ID": p.id,
-            "Nome": p.nome,
-            "Telefone": p.telefone or "",
-            "Ministérios": ", ".join([m.nome for m in p.ministerios]) or "-",
-            "Funções": ", ".join([f.nome for f in p.funcoes]) or "-"
-        })
+# --- Filtros de data ---
+with st.expander("🔎 Filtros"):
+    data_inicial = st.date_input("Data inicial", format='DD/MM/YYYY')
+    data_final = st.date_input("Data final", format="DD/MM/YYYY")
 
-    st.dataframe(dados)
+if data_inicial:
+    query_ind = query_ind.filter(Indisponibilidades.data >= data_inicial)
+if data_final:
+    query_ind = query_ind.filter(Indisponibilidades.data <= data_final)
+
+indisponibilidades = query_ind.order_by(Indisponibilidades.data.asc()).all()
+
+# --- Montar dados para tabela ---
+dados = []
+for p in indisponibilidades:
+    dados.append({
+        "ID": p.id,
+        "Participante":p.participante.nome if p.participante else "",
+        "Data": p.data.strftime('%d/%m/%Y'),
+        "Hora inicial": p.hora_inicio.strftime('%H:%M') if p.hora_inicio else "",
+        "Hora final": p.hora_fim.strftime('%H:%M') if p.hora_fim else "",
+        "Motivo": p.motivo
+    })
+
+st.dataframe(dados)
 
 session.close()
