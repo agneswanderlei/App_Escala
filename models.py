@@ -40,6 +40,16 @@ class Igrejas(Base):
     eventos = relationship("Eventos", back_populates="igreja")
     funcoes = relationship("Funcoes", back_populates='igreja')
     liturgias = relationship("Liturgias", back_populates="igreja")
+    indisponibilidades = relationship("Indisponibilidades", back_populates="igreja")
+
+class Permissoes(Base):
+    __tablename__ = "permissoes"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    pagina = Column(String, nullable=False)
+
+    usuario = relationship("Usuarios", back_populates="permissoes")
+
 
 class Usuarios(Base):
     __tablename__ = "usuarios"
@@ -52,6 +62,7 @@ class Usuarios(Base):
 
     igreja = relationship("Igrejas", back_populates="usuarios")
     participante = relationship("Participantes", uselist=False, back_populates="usuario")
+    permissoes = relationship("Permissoes", back_populates="usuario", cascade="all, delete-orphan")
 
 
 class Indisponibilidades(Base):
@@ -62,9 +73,10 @@ class Indisponibilidades(Base):
     hora_inicio = Column(Time, nullable=True)
     hora_fim = Column(Time, nullable=True)
     motivo = Column(String, nullable=True)
+    igreja_id = Column(Integer, ForeignKey("igrejas.id"), nullable=False)
 
     participante = relationship("Participantes", back_populates="indisponibilidades")
-
+    igreja = relationship('Igrejas', back_populates='indisponibilidades')
 
 class Participantes(Base):
     __tablename__ = "participantes"
@@ -97,6 +109,8 @@ class Eventos(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     nome = Column(String, nullable=False)
     data = Column(Date, nullable=False)
+    hora = Column(Time, nullable=True)
+    descricao = Column(String, nullable=True)
     igreja_id = Column(Integer, ForeignKey("igrejas.id"), nullable=False)
 
     igreja = relationship("Igrejas", back_populates="eventos")
@@ -111,6 +125,7 @@ class Escalas(Base):
     ministerio_id = Column(Integer, ForeignKey("ministerios.id"))
     participante_id = Column(Integer, ForeignKey("participantes.id"))
     funcao_id = Column(Integer, ForeignKey("funcoes.id"))  # referência à tabela Funcoes
+    descricao = Column(String, nullable=True)
 
     evento = relationship("Eventos", back_populates="escalas")
     ministerio = relationship("Ministerios", back_populates="escalas")

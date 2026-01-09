@@ -98,11 +98,7 @@ pages = {
         os.path.join('Paginas','Eventos','Adicionar_Evento.py'),
         os.path.join('Paginas','Eventos','Editar_Evento.py'),
     ],
-    'Escalas': [
-        # os.path.join('Paginas','Escalas','Escalas.py'),
-        os.path.join('Paginas','Escalas','Adicionar_Escala.py'),
-        # os.path.join('Paginas','Escalas','Editar_Escala.py'),
-    ],
+    
     'Usuários': [
         os.path.join('Paginas','Usuarios','Home_Usuários.py'),
         os.path.join('Paginas','Usuarios','Adicionar_Usuários.py'),

@@ -32,7 +32,7 @@ else:
             escolha = f"{participante_logado.id} - {participante_logado.nome}"
             st.markdown(f"**Participante:** {participante_logado.nome}")
 
-        data = st.date_input("Data da indisponibilidade", value=datetime.date.today(), format="DD/MM/YYYY")
+        data = st.date_input("Data da indisponibilidade", value=None, format="DD/MM/YYYY")
         hora_inicio = st.time_input("Hora início", value=None)
         hora_fim = st.time_input("Hora fim", value=None)
         motivo = st.text_area("Motivo", placeholder="Ex: viagem, trabalho, saúde...")
@@ -46,6 +46,7 @@ else:
                 nova_indisponibilidade = Indisponibilidades(
                     participante_id=participante_id,
                     data=data,
+                    igreja_id=igreja_id,
                     hora_inicio=hora_inicio if hora_inicio else None,
                     hora_fim=hora_fim if hora_fim else None,
                     motivo=motivo.strip() if motivo else None
