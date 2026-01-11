@@ -38,6 +38,7 @@ class Igrejas(Base):
     participantes = relationship("Participantes", back_populates="igreja")
     ministerios = relationship("Ministerios", back_populates="igreja")
     eventos = relationship("Eventos", back_populates="igreja")
+    escalas = relationship("Escalas", back_populates="igreja")
     funcoes = relationship("Funcoes", back_populates='igreja')
     liturgias = relationship("Liturgias", back_populates="igreja")
     indisponibilidades = relationship("Indisponibilidades", back_populates="igreja")
@@ -125,8 +126,11 @@ class Escalas(Base):
     ministerio_id = Column(Integer, ForeignKey("ministerios.id"))
     participante_id = Column(Integer, ForeignKey("participantes.id"))
     funcao_id = Column(Integer, ForeignKey("funcoes.id"))  # referência à tabela Funcoes
+    igreja_id = Column(Integer, ForeignKey("igrejas.id"), nullable=False)
+
     descricao = Column(String, nullable=True)
 
+    igreja = relationship("Igrejas", back_populates="escalas")
     evento = relationship("Eventos", back_populates="escalas")
     ministerio = relationship("Ministerios", back_populates="escalas")
     participante = relationship("Participantes", back_populates="escalas")

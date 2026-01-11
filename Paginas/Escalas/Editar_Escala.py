@@ -5,52 +5,52 @@ from models import Eventos, Ministerios, Participantes, Indisponibilidades, Esca
 st.set_page_config(layout='centered')
 session = SessionLocal()
 
-st.title("📋 Cadastro de Escala")
+st.title("📋 Editar de Escala")
 
 perfil = st.session_state.perfil
 igreja_id = st.session_state.igreja
 
 if perfil == 'Supervisor':
     ministerios = session.query(Ministerios).all()
-    eventos = session.query(Eventos).all()
+    escalas = session.query(Escalas).all()
     participantes = session.query(Participantes).all()
 else:
     ministerios = session.query(Ministerios).filter_by(igreja_id=igreja_id).all()
-    eventos = session.query(Eventos).filter_by(igreja_id=igreja_id).all()
+    escalas = session.query(Escalas).filter_by(igreja_id=igreja_id).all()
     participantes = session.query(Participantes).filter_by(igreja_id=igreja_id).all()
 
-eventos_id = [e.id for e in eventos]
+escalas_id = [escala.id for escala in escalas]
 ministerios_id = [m.id for m in ministerios]
-
+participantes_id = [p.id for p in participantes]
 # with st.form("form_cadastro", clear_on_submit=True):
 with st.container(border=True):
     evento = st.selectbox(
         "Evento",
-        options=[e.id for e in eventos],
-        format_func=lambda x: next((f'{e.nome} - {e.data.strftime("%d/%m/%Y")} - {e.hora.strftime("%H:%M") if e.hora else "Não especificada"}' for e in eventos if e.id == x), "")
+        options=escalas_id,
+        format_func=lambda x: next((f'{escala.nome} - {escala.data.strftime("%d/%m/%Y")} - {escala.hora.strftime("%H:%M") if escala.hora else "Não especificada"}' for escala in escalas if escala.id == x), "")
     )
     ministerio = st.selectbox(
         "Ministério",
-        options=[m.id for m in ministerios],
+        options=ministerios_id,
         format_func=lambda x: next((m.nome for m in ministerios if m.id == x), "")
     )
 
     # 🔎 Buscar participantes do ministério selecionado
-    ministerio_obj = session.query(Ministerios).get(ministerio)
-    participantes_ministerio = ministerio_obj.participantes if ministerio_obj else []
+    escal = session.query(Escalas).filter(Escalas.ministerio_id==ministerio).filter(Escalas.evento_id==evento).all()
     participante = st.multiselect(
         "Participante",
-        options=[p.id for p in participantes_ministerio],
-        format_func=lambda x: next((p.nome for p in participantes_ministerio if p.id == x), "")
+        options=participantes_id,
+        format_func=lambda x: next((p.nome for p in participantes if p.id == x), ""),
+        default=[p.participante_id for p in escal]
     )
     for p_id in participante:
         escala = session.query(Escalas).filter_by(participante_id=p_id).filter_by(evento_id=evento).first()
-        if escala:
-            st.info(f"O participante {session.query(Participantes).get(p_id).nome} já possui escala cadastrada para este evento.")
+        # if escala:
+        #     st.info(f"O participante {session.query(Participantes).get(p_id).nome} já possui escala cadastrada para este evento.")
 
     descricao = st.text_area("Descrição da escala (opcional)", height=200)
 
-    salvar = st.button("Cadastrar", type="primary")
+    salvar = st.button("Atualizar", key="primary")
 
     if salvar:
         try:
