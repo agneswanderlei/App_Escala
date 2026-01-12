@@ -14,7 +14,7 @@ funcoes = session.query(Funcoes).filter_by(igreja_id=st.session_state.igreja).al
 
 opcoes_usuarios = ["Convidado"] + [f"{u.id} - {u.nome}" for u in usuarios]
 
-with st.form("form_cadastro", clear_on_submit=True):
+with st.container(border=True):
     escolha = st.selectbox("Selecione um usuário ou digite novo:", options=opcoes_usuarios, index=None)
 
     nome_extra = None
@@ -34,7 +34,7 @@ with st.form("form_cadastro", clear_on_submit=True):
         options=[f"{f.id} - {f.nome}" for f in funcoes]
     )
 
-    salvar = st.form_submit_button("Cadastrar", type="primary")
+    salvar = st.button("Cadastrar", type="primary")
 
     if salvar:
         try:

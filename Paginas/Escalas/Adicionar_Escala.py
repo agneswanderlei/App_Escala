@@ -1,10 +1,14 @@
 import streamlit as st
 from db import SessionLocal
-from models import Eventos, Ministerios, Participantes, Indisponibilidades, Escalas
-
+from models import Eventos, Ministerios, Participantes, Indisponibilidades, Escalas, participante_funcao, Funcoes
+import pandas as pd
 st.set_page_config(layout='centered')
-session = SessionLocal()
+with open('Paginas/Usuarios/styles.css') as f:
+    st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
+session = SessionLocal()
+if 'lista_participante_funcao' not in st.session_state:
+    st.session_state.lista_participante_funcao = {}
 st.title("📋 Cadastro de Escala")
 
 perfil = st.session_state.perfil
@@ -38,19 +42,47 @@ with st.container(border=True):
     # 🔎 Buscar participantes do ministério selecionado
     ministerio_obj = session.query(Ministerios).get(ministerio)
     participantes_ministerio = ministerio_obj.participantes if ministerio_obj else []
-    participante = st.multiselect(
-        "Participante",
-        options=[p.id for p in participantes_ministerio],
-        format_func=lambda x: next((p.nome for p in participantes_ministerio if p.id == x), "")
+    with st.container(horizontal=True, vertical_alignment='bottom'):
+        participante = st.selectbox(
+            "Participante",
+            options=[p.id for p in participantes_ministerio],
+            format_func=lambda x: next((p.nome for p in participantes_ministerio if p.id == x), "")
+        )
+        funcao_participante = session.query(participante_funcao).filter_by(participante_id=participante).all()
+        funcao = st.selectbox(
+            "Função",
+            options=[f.funcao_id for f in funcao_participante],
+            format_func=lambda x: session.query(Funcoes).get(x).nome if session.query(Funcoes).get(x) else ""
+        )
+        add_participante = st.button('Adicionar', key='success')
+        if add_participante:
+            st.session_state.lista_participante_funcao[participante] = funcao
+        del_participante = st.button('Retirar', key='danger')
+        if del_participante:
+            del st.session_state.lista_participante_funcao[participante]
+    # Tabela participantes com funcao:
+    dados_convertidos = [
+        {
+            'Participante': session.query(Participantes).get(p_id).nome,
+            'Função': session.query(Funcoes).get(f_id).nome if f_id else ""
+        }
+        for p_id,f_id in st.session_state.lista_participante_funcao.items()
+    ]
+    dados = pd.DataFrame(
+        dados_convertidos,
+        columns=['Participante', 'Função']
     )
-    for p_id in participante:
-        escala = session.query(Escalas).filter_by(participante_id=p_id).filter_by(evento_id=evento).first()
-        if escala:
-            st.info(f"O participante {session.query(Participantes).get(p_id).nome} já possui escala cadastrada para este evento.")
+    escala = session.query(Escalas).filter_by(participante_id=participante).filter_by(evento_id=evento).first()
+    if escala:
+        st.info(f"O participante {session.query(Participantes).get(participante).nome} já possui escala cadastrada para este evento.")
+    st.dataframe(
+        dados,
+        width='stretch'
+    )
 
     descricao = st.text_area("Descrição da escala (opcional)", height=200)
 
-    salvar = st.button("Cadastrar", type="primary")
+    salvar = st.button("Cadastrar", key="primary")
 
     if salvar:
         try:
@@ -61,8 +93,9 @@ with st.container(border=True):
             evento_obj = session.query(Eventos).get(evento)
 
             # Buscar indisponibilidades na mesma data
+
             indisponibilidades = session.query(Indisponibilidades).filter(
-                Indisponibilidades.participante_id.in_(participante),
+                Indisponibilidades.participante_id.in_(list(st.session_state.lista_participante_funcao.keys())),
                 Indisponibilidades.data == evento_obj.data
             ).all()
 
@@ -89,11 +122,15 @@ with st.container(border=True):
                 st.error(f"Os seguintes participantes estão indisponíveis no horário do evento: {nomes_indisponiveis}")
                 st.stop()
             # Aqui você deve salvar na tabela Escalas
-            for p_id in participante:
+            for p_id, f_id in st.session_state.lista_participante_funcao.items():
+                st.write(p_id)
                 nova_escala = Escalas(
                     evento_id=evento,
                     ministerio_id=ministerio,
                     participante_id=p_id,
+                    funcao_id=f_id,
+                    igreja_id=igreja_id,
+
                     descricao=descricao
                 )
                 session.add(nova_escala)
