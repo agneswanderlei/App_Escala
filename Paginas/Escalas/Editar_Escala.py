@@ -1,151 +1,133 @@
 import streamlit as st
 from db import SessionLocal
-from models import Eventos, Ministerios, Participantes, Indisponibilidades, Escalas, Funcoes, participante_funcao
+from models import Eventos, Ministerios, Participantes, Escalas, Funcoes, participante_funcao, Indisponibilidades
 import pandas as pd
-st.set_page_config(layout='centered')
-with open('Paginas/Usuarios/styles.css') as f:
-    st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
+st.set_page_config(layout='centered')
 session = SessionLocal()
 
-st.title("📋 Editar de Escala")
+st.title("📋 Editar Escalas")
 
-perfil = st.session_state.perfil
 igreja_id = st.session_state.igreja
 
-if perfil == 'Supervisor':
-    ministerios = session.query(Ministerios).all()
-    eventos = session.query(Eventos).all()
-    participantes = session.query(Participantes).all()
-    escalas = session.query(Escalas).all()
-else:
-    ministerios = session.query(Ministerios).filter_by(igreja_id=igreja_id).all()
-    eventos = session.query(Eventos).filter_by(igreja_id=igreja_id).all()
-    participantes = session.query(Participantes).filter_by(igreja_id=igreja_id).all()
-    escalas = session.query(Escalas).filter_by(igreja_id=igreja_id).all()
+# Buscar dados da igreja
+eventos = session.query(Eventos).filter_by(igreja_id=igreja_id).all()
+ministerios = session.query(Ministerios).filter_by(igreja_id=igreja_id).all()
+participantes = session.query(Participantes).filter_by(igreja_id=igreja_id).all()
+funcoes = session.query(Funcoes).filter_by(igreja_id=igreja_id).all()
 
-eventos_id = [escala.id for escala in eventos]
-ministerios_id = [m.id for m in ministerios]
-participantes_id = [p.id for p in participantes]
-# with st.form("form_cadastro", clear_on_submit=True):
-with st.container(border=True):
-    evento = st.selectbox(
-        "Evento",
-        options=eventos_id,
-        format_func=lambda x: next((f'{escala.nome} - {escala.data.strftime("%d/%m/%Y")} - {escala.hora.strftime("%H:%M") if escala.hora else "Não especificada"}' for escala in eventos if escala.id == x), "")
-    )
-    ministerio = st.selectbox(
-        "Ministério",
-        options=ministerios_id,
-        format_func=lambda x: next((m.nome for m in ministerios if m.id == x), "")
-    )
+# Selectbox de evento e ministério
+evento = st.selectbox(
+    "Evento",
+    options=[None] + [e.id for e in eventos],
+    format_func=lambda x: "Selecione..." if x is None else f"{next(e.nome for e in eventos if e.id == x)} - {next(e.data.strftime('%d/%m/%Y') for e in eventos if e.id == x)} - {next(e.hora.strftime('%H:%M') if e.hora else 'Não especificada' for e in eventos if e.id == x)}"
+)
 
-    # 🔎 Buscar participantes do ministério selecionado
-    escal = session.query(Escalas).filter(Escalas.ministerio_id==ministerio).filter(Escalas.evento_id==evento).all()
+ministerio = st.selectbox(
+    "Ministério (opcional)",
+    options=[None] + [m.id for m in ministerios],
+    format_func=lambda x: "Todos" if x is None else next(m.nome for m in ministerios if m.id == x)
+)
+
+# Inicializar state com escalas do evento
+if evento:
+    escalas_db = session.query(Escalas).filter_by(evento_id=evento, igreja_id=igreja_id).all()
     if "lista_participante_escala_funcao" not in st.session_state:
-        escalas_db = session.query(Escalas).filter_by(
-            igreja_id=igreja_id, 
-            ministerio_id=ministerio, 
-            evento_id=evento
-        ).all()
-
-        # transformar em dicionário {participante_id: funcao_id}
         st.session_state.lista_participante_escala_funcao = {
             esc.participante_id: esc.funcao_id for esc in escalas_db
         }
-    with st.container(horizontal=True, vertical_alignment='bottom'):
-        participante = st.selectbox(
-            "Participante",
-            options=participantes_id,
-            format_func=lambda x: next((p.nome for p in participantes if p.id == x), ""),
-        )
-        funcao_participante = session.query(participante_funcao).filter_by(participante_id=participante).all()
-        funcao = st.selectbox(
-            "Função",
-            options=[f.funcao_id for f in funcao_participante],
-            format_func=lambda x: session.query(Funcoes).get(x).nome if session.query(Funcoes).get(x) else ""
-        )
-        add_participante = st.button('Adicionar', key='success')
-        if add_participante:
-            st.session_state.lista_participante_escala_funcao[participante] = funcao
-        del_participante = st.button('Retirar', key='danger')
-        # if del_participante:
-        #     del st.session_state.lista_participante_funcao[participante]
-    st.write(st.session_state.lista_participante_escala_funcao)
+
+    # Seleção de participante e função
+    # Seleção de participante
+participante = st.selectbox(
+    "Participante",
+    options=[p.id for p in participantes],
+    format_func=lambda x: next(p.nome for p in participantes if p.id == x)
+)
+
+# Verificar impedimentos e duplicidade
+if participante and evento:
+    evento_obj = session.query(Eventos).get(evento)
+
+    # 1. Verificar indisponibilidade considerando intervalo de horas
+    indisponibilidades = session.query(Indisponibilidades).filter_by(
+        participante_id=participante,
+        igreja_id=igreja_id,
+        data=evento_obj.data
+    ).all()
+
+    for ind in indisponibilidades:
+        if ind.hora_inicio and ind.hora_fim and evento_obj.hora:
+            if ind.hora_inicio <= evento_obj.hora <= ind.hora_fim:
+                st.warning(
+                    f"⚠️ O participante está indisponível em "
+                    f"{evento_obj.data.strftime('%d/%m/%Y')} "
+                    f"das {ind.hora_inicio.strftime('%H:%M')} às {ind.hora_fim.strftime('%H:%M')}."
+                )
+        elif evento_obj.hora is None:
+            # Caso o evento não tenha hora definida, considerar indisponível no dia inteiro
+            st.warning(
+                f"⚠️ O participante está indisponível em {evento_obj.data.strftime('%d/%m/%Y')}."
+            )
+
+    # 2. Verificar se já está escalado
+    ja_escalado = session.query(Escalas).filter_by(
+        evento_id=evento,
+        participante_id=participante,
+        igreja_id=igreja_id
+    ).first()
+
+    if ja_escalado:
+        st.info("ℹ️ Este participante já está escalado para este evento.")
+    funcao_participante = session.query(participante_funcao).filter_by(participante_id=participante).all()
+    funcao = st.selectbox(
+        "Função",
+        options=[f.funcao_id for f in funcao_participante],
+        format_func=lambda x: session.query(Funcoes).get(x).nome if session.query(Funcoes).get(x) else ""
+    )
+
+    # Botões
+    if st.button("Adicionar"):
+        st.session_state.lista_participante_escala_funcao[participante] = (funcao, ministerio)
+
+    if st.button("Retirar"):
+        if participante in st.session_state.lista_participante_escala_funcao:
+            del st.session_state.lista_participante_escala_funcao[participante]
+
+    # Mostrar tabela
     dados_convertidos = [
         {
-            'Participante': session.query(Participantes).get(p.participante_id).nome,
-            'Função': session.query(Funcoes).get(p.funcao_id).nome if p.funcao_id else ""
+            "Participante": session.query(Participantes).get(p_id).nome,
+            "Função": session.query(Funcoes).get(f_id).nome if f_id else "",
+            "Ministério": session.query(Ministerios).get(m_id).nome if m_id else "-"
         }
-        for p in st.session_state.lista_participante_escala_funcao.items()
+        for p_id, (f_id, m_id) in st.session_state.lista_participante_escala_funcao.items()
+        if ministerio is None or m_id == ministerio
     ]
-    dados = pd.DataFrame(
-        dados_convertidos,
-        columns=['Participante', 'Função']
-    )
-    st.dataframe(
-        dados,
-        width='stretch'
-    )
-    # for p_id in participante:
-    #     escala = session.query(Escalas).filter_by(participante_id=p_id).filter_by(evento_id=evento).first()
-        # if escala:
-        #     st.info(f"O participante {session.query(Participantes).get(p_id).nome} já possui escala cadastrada para este evento.")
-    # st.write(escal[0].funcao.nome)  # Espaço visual
-    descricao = st.text_area("Descrição da escala (opcional)", height=200, value=escal[0].descricao if escal else "")
+    st.dataframe(pd.DataFrame(dados_convertidos, columns=["Participante", "Função", "Ministério"]), width="stretch")
 
-    salvar = st.button("Atualizar", key="primary")
+    descricao = st.text_area("Descrição da escala (opcional)", height=200)
 
-    if salvar:
+    # Salvar alterações
+    if st.button("Salvar alterações"):
         try:
-            # Validações
-            if not evento or not ministerio or not participante:
-                st.warning("Por favor, preencha todos os campos obrigatórios.")
-                st.stop()
-            evento_obj = session.query(Eventos).get(evento)
+            # Apagar escalas antigas do evento
+            session.query(Escalas).filter_by(evento_id=evento, igreja_id=igreja_id).delete()
 
-            # Buscar indisponibilidades na mesma data
-            indisponibilidades = session.query(Indisponibilidades).filter(
-                Indisponibilidades.participante_id.in_(participante),
-                Indisponibilidades.data == evento_obj.data
-            ).all()
+            # Recriar com base no state
+            for p_id, (f_id, m_id) in st.session_state.lista_participante_escala_funcao.items():
+                nova = Escalas(
+                    evento_id=evento,
+                    ministerio_id=m_id,
+                    participante_id=p_id,
+                    funcao_id=f_id,
+                    igreja_id=igreja_id,
+                    descricao=descricao
+                )
+                session.add(nova)
 
-            # Verificar conflito de horário
-            conflitos = []
-            for ind in indisponibilidades:
-                # Se o evento tem hora definida
-                if evento_obj.hora:
-                    # Se a hora do evento está dentro do intervalo de indisponibilidade
-                    if ind.hora_inicio and ind.hora_fim:
-                        if ind.hora_inicio <= evento_obj.hora <= ind.hora_fim:
-                            conflitos.append(ind.participante_id)
-                    # Caso só tenha hora_inicio (indisponível a partir dali)
-                    elif ind.hora_inicio and not ind.hora_fim:
-                        if evento_obj.hora >= ind.hora_inicio:
-                            conflitos.append(ind.participante_id)
-                    # Caso só tenha hora_fim (indisponível até ali)
-                    elif ind.hora_fim and not ind.hora_inicio:
-                        if evento_obj.hora <= ind.hora_fim:
-                            conflitos.append(ind.participante_id)
-
-            if conflitos:
-                nomes_indisponiveis = ', '.join([session.query(Participantes).get(pid).nome for pid in conflitos])
-                st.error(f"Os seguintes participantes estão indisponíveis no horário do evento: {nomes_indisponiveis}")
-                st.stop()
-            # Aqui você deve salvar na tabela Escalas
-            # for p_id in participante:
-            #     nova_escala = Escalas(
-            #         evento_id=evento,
-            #         ministerio_id=ministerio,
-            #         participante_id=p_id,
-            #         descricao=descricao
-            #     )
-            #     session.add(nova_escala)
-
-            # session.commit()
-            st.success("Escala cadastrada com sucesso!")
+            session.commit()
+            st.success("Escala atualizada com sucesso!")
         except Exception as e:
             session.rollback()
-            st.error(f"Erro ao cadastrar Escala: {e}")
-        finally:
-            session.close()
+            st.error(f"Erro ao salvar: {e}")
