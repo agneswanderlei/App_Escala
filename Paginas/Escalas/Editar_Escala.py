@@ -1,6 +1,6 @@
 import streamlit as st
 from db import SessionLocal
-from models import Eventos, Ministerios, Participantes, Escalas, Funcoes, participante_funcao, Indisponibilidades
+from models import Eventos, Ministerios, Participantes, Escalas, Funcoes, participante_funcao, Indisponibilidades, DescricaoEscala
 import pandas as pd
 
 st.set_page_config(layout='centered')
@@ -12,8 +12,7 @@ st.title("📋 Editar Escalas")
 
 igreja_id = st.session_state.igreja
 if 'lista_participante_escala_funcao' not in st.session_state:
-    st.session_state.lista_participante_escala_funcao = {}
-
+    st.session_state.lista_participante_escala_funcao = []
 # Buscar dados da igreja
 ministerios = session.query(Ministerios).filter_by(igreja_id=igreja_id).all()
 eventos = session.query(Eventos).filter_by(igreja_id=igreja_id).all()
@@ -38,13 +37,14 @@ with st.container(border=True):
 
     # Inicializar state com escalas do evento
     if evento:
-        escalas_db = session.query(Escalas).filter_by(igreja_id=igreja_id, evento_id=evento).all()
-        
-        st.session_state.lista_participante_escala_funcao = {
-            esc.id: (esc.participante_id, esc.funcao_id, esc.ministerio_id, esc.descricao or "")
-            for esc in escalas_db
-        }
-
+        if not st.session_state.lista_participante_escala_funcao:
+            escalas_db = session.query(Escalas).filter_by(igreja_id=igreja_id, evento_id=evento).all()
+            
+            st.session_state.lista_participante_escala_funcao = [
+                (esc.participante_id, esc.funcao_id, esc.ministerio_id)
+                for esc in escalas_db
+            ]
+        st.write(st.session_state.lista_participante_escala_funcao)
     else:
         st.info('Selecione um evento.')
     ## Seleção de participante e função
@@ -53,9 +53,12 @@ with st.container(border=True):
         participante = st.selectbox(
             'Participantes',
             options= [p.id for p in participantes],
-            format_func= lambda x: next(p.nome for p in participantes if p.id == x)
+            format_func= lambda x: next(p.nome for p in participantes if p.id == x),
+            index=None
         )
-        funcao_db = session.query(participante_funcao).filter_by(participante_id=participante).all()
+        funcao_db = []
+        if participante:
+            funcao_db = session.query(participante_funcao).filter_by(participante_id=participante).all()
         funcao = st.selectbox(
             'Função',
             options=[f.funcao_id for f in funcao_db],
@@ -63,8 +66,26 @@ with st.container(border=True):
         )
         add = st.button('Adicionar', key='primary')
         if add:
-            st.session_state.lista_participante_escala_funcao[participante] = (funcao, ministerio)
+            lista_participantes= []
+            for p_id, f_id, m_id in st.session_state.lista_participante_escala_funcao:
+                lista_participantes.append(p_id)
+                
+            if participante  not in lista_participantes and ministerio:
+                st.session_state.lista_participante_escala_funcao.append(
+                    (participante,funcao,ministerio)
+                )
+            elif participante  not in lista_participantes and not ministerio:
+                st.toast('Selecione o ministerio',icon='⚠️')
+            else:
+                st.toast('Participante já adicionado na lista abaixo.', icon='⚠️')
         retirar = st.button('Retirar', key='warning')
+        if retirar:
+            try:
+                st.session_state.lista_participante_escala_funcao.remove((participante, funcao, ministerio))
+            except ValueError:
+                st.toast('Os campos ministérios, participantes e função devem tá preenchidos.', icon='⚠️')
+
+
     # Verificar impedimentos e duplicidade
     conflitos = 0
     if participante and evento:
@@ -102,10 +123,10 @@ with st.container(border=True):
         {
             'Participantes': session.query(Participantes).get(p_id).nome,
             'Funções': session.query(Funcoes).get(f_id).nome if f_id else "",
-            'Ministérios': session.query(Ministerios).get(m_id).nome if m_id else "",
-            'Descrição': desc
+            'Ministérios': session.query(Ministerios).get(m_id).nome if m_id else ""
+            
         }
-        for _, (p_id, f_id, m_id, desc) in st.session_state.lista_participante_escala_funcao.items() if ministerio is None or m_id == ministerio
+        for (p_id, f_id, m_id) in st.session_state.lista_participante_escala_funcao if ministerio is None or m_id == ministerio
     ]
     dados = pd.DataFrame(
         dados_convertidos,
@@ -115,11 +136,45 @@ with st.container(border=True):
         dados,
         width='stretch'
     )
-    p_id, f_id, m_id, desc = st.session_state.lista_participante_escala_funcao.get(
-        escala_id, (None, None, None, "")
+    
+    desc=session.query(DescricaoEscala).filter_by(
+            igreja_id=igreja_id,
+            evento_id=evento,
+            ministerio_id=ministerio
+        ).first()
+    descricao = st.text_area(
+        'Descrição',
+        height=200,
+        value=desc.descricao if desc else None
     )
-
-    descricao = st.text_area('Descrição', height=200, value=desc)
     with st.container(horizontal=True):
+        escala_evento = session.query(Escalas).filter_by(
+            igreja_id=igreja_id,
+            evento_id=evento
+        ).all()
+        indisp = session.query(Indisponibilidades).filter_by(
+            igreja_id=igreja_id,
+            data=evento_obj.data
+        )
+
         atualizar = st.button('Atualizar', key='success')
+        if atualizar:
+            for (p_id,_,_) in st.session_state.lista_participante_escala_funcao:
+                if p_id in [p.ministerio_id for p in escala_evento]:
+                    st.toast(f'O participante **{session.query(Escalas).filter_by(participante_id=p_id).first().participante.nome}** já está escalado no ministério **{session.query(Escalas).filter_by(participante_id=p_id).first().ministerio.nome}** !',icon='⚠️')
+                    st.stop()
+                indisp = session.query(Indisponibilidades).filter_by(
+                    igreja_id=igreja_id,
+                    data=evento_obj.data,
+                    participante_id=p_id
+                ).all()
+                for ind in indisp:
+                    if ind.hora_inicio <= evento_obj.hora <= ind.hora_fim:
+                        st.toast(
+                            f"⚠️ O participante está indisponível em "
+                            f"{evento_obj.data.strftime('%d/%m/%Y')}"
+                            f" das {ind.hora_inicio.strftime('%H:%M')} as {ind.hora_fim.strftime('%H:%M')}",
+                            icon='⚠️'
+                        )
+                
         deletar = st.button('Deletar', key='danger')

@@ -56,7 +56,7 @@ with st.container(border=True):
         )
         add_participante = st.button('Adicionar', key='success')
         if add_participante:
-            st.session_state.lista_participante_funcao[participante] = funcao
+            st.session_state.lista_participante_funcao[participante] = (funcao, ministerio)
         del_participante = st.button('Retirar', key='danger')
         if del_participante:
             del st.session_state.lista_participante_funcao[participante]
@@ -66,7 +66,7 @@ with st.container(border=True):
             'Participante': session.query(Participantes).get(p_id).nome,
             'Função': session.query(Funcoes).get(f_id).nome if f_id else ""
         }
-        for p_id,f_id in st.session_state.lista_participante_funcao.items()
+        for p_id,(f_id,_) in st.session_state.lista_participante_funcao.items()
     ]
     dados = pd.DataFrame(
         dados_convertidos,
@@ -122,16 +122,18 @@ with st.container(border=True):
                 st.error(f"Os seguintes participantes estão indisponíveis no horário do evento: {nomes_indisponiveis}")
                 st.stop()
             # Aqui você deve salvar na tabela Escalas
-            for p_id, f_id in st.session_state.lista_participante_funcao.items():
-                st.write(p_id)
+            for p_id, (f_id,m_id) in st.session_state.lista_participante_funcao.items():
+                ministerio_add = session.query(Escalas).filter_by(ministerio_id=m_id,igreja_id=igreja_id, evento_id=evento).first()
+                if ministerio_add:
+                    st.warning(f'O ministerio {ministerio_add.ministerio.nome} já foi cadastrado para o evento {ministerio_add.evento.nome}!')
+                    st.stop()
                 nova_escala = Escalas(
                     evento_id=evento,
-                    ministerio_id=ministerio,
+                    ministerio_id=m_id,
                     participante_id=p_id,
                     funcao_id=f_id,
                     igreja_id=igreja_id,
 
-                    descricao=descricao
                 )
                 session.add(nova_escala)
 

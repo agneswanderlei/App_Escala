@@ -128,8 +128,6 @@ class Escalas(Base):
     funcao_id = Column(Integer, ForeignKey("funcoes.id"))  # referência à tabela Funcoes
     igreja_id = Column(Integer, ForeignKey("igrejas.id"), nullable=False)
 
-    descricao = Column(String, nullable=True)
-
     igreja = relationship("Igrejas", back_populates="escalas")
     evento = relationship("Eventos", back_populates="escalas")
     ministerio = relationship("Ministerios", back_populates="escalas")

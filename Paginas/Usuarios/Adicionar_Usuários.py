@@ -11,7 +11,7 @@ session = SessionLocal()
 # UI da página
 st.title("📋 Cadastro de Usuário")
 
-with st.form("form_cadastro"):
+with st.form("form_cadastro", clear_on_submit=True):
     if st.session_state['perfil'] == 'Supervisor':
         igreja_opcao = st.selectbox("Selecione a Igreja", options=[(i.id, i.nome) for i in session.query(Igrejas).all()], format_func=lambda x: x[1])
         igreja_id = igreja_opcao[0]
