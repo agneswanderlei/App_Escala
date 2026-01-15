@@ -136,6 +136,18 @@ class Escalas(Base):
     participante = relationship("Participantes", back_populates="escalas")
     funcao = relationship("Funcoes")  # relação direta com Funcoes
 
+class DescricaoEscala(Base):
+    __tablename__ = "descricao_escala"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    evento_id = Column(Integer, ForeignKey("eventos.id"))
+    ministerio_id = Column(Integer, ForeignKey("ministerios.id"))
+    igreja_id = Column(Integer, ForeignKey("igrejas.id"))
+    descricao = Column(String, nullable=True)
+
+    evento = relationship("Eventos")
+    ministerio = relationship("Ministerios")
+    igreja = relationship("Igrejas")
+
 class Liturgias(Base):
     __tablename__ = "liturgias"
     id = Column(Integer, primary_key=True, autoincrement=True)

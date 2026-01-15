@@ -1,6 +1,6 @@
 import streamlit as st
 from db import SessionLocal
-from models import Eventos, Ministerios, Participantes, Indisponibilidades, Escalas, participante_funcao, Funcoes
+from models import Eventos, Ministerios, Participantes, Indisponibilidades, Escalas, participante_funcao, Funcoes, DescricaoEscala
 import pandas as pd
 st.set_page_config(layout='centered')
 with open('Paginas/Usuarios/styles.css') as f:
@@ -135,6 +135,15 @@ with st.container(border=True):
                 )
                 session.add(nova_escala)
 
+            session.commit()
+            nova_desc = DescricaoEscala(
+                evento_id=evento,
+                ministerio_id=ministerio,
+                igreja_id=igreja_id,
+                descricao=descricao,
+            )
+
+            session.add(nova_desc)
             session.commit()
             st.success("Escala cadastrada com sucesso!")
         except Exception as e:
