@@ -2,45 +2,23 @@ import streamlit as st
 from db import SessionLocal
 from models import Eventos, Ministerios, Participantes, Indisponibilidades, Escalas, participante_funcao, Funcoes, DescricaoEscala, Igrejas
 import pandas as pd
-import requests
-from dotenv import load_dotenv
+from Paginas.Escalas.jobs import enviar_lembrete
+from Paginas.Escalas.Enviar_mensagens import send_whatsapp_message
+# --- Adicionando o diretório pai ao path de busca ---
+import sys
 import os
-from pathlib import Path
-
-
-# Força o caminho absoluto para o .env na raiz
-env_path = Path(__file__).resolve().parents[2] / ".env"
-
-load_dotenv(env_path)
-EVOLUTION_AUTHENTICATION_API_KEY = os.getenv('AUTHENTICATION_API_KEY')
+print("PATH:", sys.path)
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 st.set_page_config(layout='centered')
 with open('Paginas/Usuarios/styles.css') as f:
     st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
-def send_whatsapp_message(number: str, text: str, instance_name: str):
-    """
-    Envia uma mensagem de texto via WhatsApp.
-    O nome da instância é passado dinamicamente.
-    """
-    url = f'http://72.60.155.96:8080/message/sendText/{instance_name}'
-    headers = {
-        'apikey': EVOLUTION_AUTHENTICATION_API_KEY,
-        'Content-Type': 'application/json'
-    }
-    payload = {
-        'number': number,
-        'text': text,
-    }
-    response = requests.post(
-        url=url,
-        json=payload,
-        headers=headers
-    )
-    return response.json()
+
 
 session = SessionLocal()
 if 'lista_participante_funcao' not in st.session_state:
     st.session_state.lista_participante_funcao = {}
+scheduler = st.session_state.scheduler
 st.title("📋 Cadastro de Escala")
 
 perfil = st.session_state.perfil
@@ -203,7 +181,34 @@ with st.container(border=True):
                     text=texto,
                     instance_name=instancia
                 )
+                
+                from datetime import datetime, timedelta
 
+                evento_datetime = datetime.combine(evento_obj.data, evento_obj.hora)
+
+                # 2 dias antes
+                scheduler.add_job(
+                    enviar_lembrete,
+                    'date',
+                    run_date=evento_datetime - timedelta(minutes=1),
+                    args=[p_id, evento_obj.id, ministerio_nome, funcao_nome, igreja_nome, link_responsavel, "2dias", instancia]
+                )
+
+                # 1 dia antes
+                scheduler.add_job(
+                    enviar_lembrete,
+                    'date',
+                    run_date=evento_datetime - timedelta(minutes=2),
+                    args=[p_id, evento_obj.id, ministerio_nome, funcao_nome, igreja_nome, link_responsavel, "1dia", instancia]
+                )
+
+                # 2 horas antes
+                scheduler.add_job(
+                    enviar_lembrete,
+                    'date',
+                    run_date=evento_datetime - timedelta(minutes=3),
+                    args=[p_id, evento_obj.id, ministerio_nome, funcao_nome, igreja_nome, link_responsavel, "2horas", instancia]
+                )
 
             session.commit()
             nova_desc = DescricaoEscala(

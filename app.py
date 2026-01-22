@@ -3,6 +3,9 @@ import os
 import streamlit_authenticator as stauth
 from models import Usuarios, Igrejas
 from db import SessionLocal
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+
 # --- Configuração Inicial ---
 st.set_page_config(page_title="FLORESCER", initial_sidebar_state='collapsed')
 # --- Configuração do Autenticador ---
@@ -18,6 +21,15 @@ st.markdown("""
         }
     </style>
 """, unsafe_allow_html=True)
+# Inicializa o scheduler apenas uma vez
+if "scheduler" not in st.session_state:
+    jobstores = {
+        'default': SQLAlchemyJobStore(url='sqlite:///Banco_dados/jobs.sqlite')
+    }
+    st.session_state.scheduler = BackgroundScheduler(jobstores=jobstores)
+    st.session_state.scheduler.start()
+
+
 # consultar banco usuarios
 usuarios = session.query(Usuarios).all()
 if len(usuarios) == 0:

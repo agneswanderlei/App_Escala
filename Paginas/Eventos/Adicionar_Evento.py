@@ -12,7 +12,7 @@ with st.form("form_cadastro", clear_on_submit=True):
     nome = st.text_input("Nome do evento")
     with st.container(horizontal=True):
         data = st.date_input("Data do evento", format="DD/MM/YYYY", value=None)
-        hora = st.time_input("Hora do evento", value=None)
+        hora = st.time_input("Hora do evento", value=None, step=300)
     descricao = st.text_area("Descrição do evento (opcional)", height=200)
 
 

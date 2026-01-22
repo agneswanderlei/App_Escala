@@ -31,7 +31,7 @@ with st.form("form_cadastro", clear_on_submit=True):
     nome = st.text_input("Nome do evento", value=eventos.nome)
     with st.container(horizontal=True):
         data = st.date_input("Data do evento", format="DD/MM/YYYY", value=eventos.data)
-        hora = st.time_input("Hora do evento", value=eventos.hora)
+        hora = st.time_input("Hora do evento", value=eventos.hora, step=300)
     descricao = st.text_area("Descrição do evento (opcional)", height=200, value=eventos.descricao)
     with st.container(horizontal=True, vertical_alignment='bottom'):
         salvar = st.form_submit_button("Salvar", key="primary")
