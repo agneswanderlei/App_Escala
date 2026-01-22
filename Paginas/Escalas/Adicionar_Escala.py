@@ -1,10 +1,42 @@
 import streamlit as st
 from db import SessionLocal
-from models import Eventos, Ministerios, Participantes, Indisponibilidades, Escalas, participante_funcao, Funcoes, DescricaoEscala
+from models import Eventos, Ministerios, Participantes, Indisponibilidades, Escalas, participante_funcao, Funcoes, DescricaoEscala, Igrejas
 import pandas as pd
+import requests
+from dotenv import load_dotenv
+import os
+from pathlib import Path
+
+
+# Força o caminho absoluto para o .env na raiz
+env_path = Path(__file__).resolve().parents[2] / ".env"
+
+load_dotenv(env_path)
+EVOLUTION_AUTHENTICATION_API_KEY = os.getenv('AUTHENTICATION_API_KEY')
 st.set_page_config(layout='centered')
 with open('Paginas/Usuarios/styles.css') as f:
     st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+
+def send_whatsapp_message(number: str, text: str, instance_name: str):
+    """
+    Envia uma mensagem de texto via WhatsApp.
+    O nome da instância é passado dinamicamente.
+    """
+    url = f'http://72.60.155.96:8080/message/sendText/{instance_name}'
+    headers = {
+        'apikey': EVOLUTION_AUTHENTICATION_API_KEY,
+        'Content-Type': 'application/json'
+    }
+    payload = {
+        'number': number,
+        'text': text,
+    }
+    response = requests.post(
+        url=url,
+        json=payload,
+        headers=headers
+    )
+    return response.json()
 
 session = SessionLocal()
 if 'lista_participante_funcao' not in st.session_state:
@@ -83,7 +115,9 @@ with st.container(border=True):
     descricao = st.text_area("Descrição da escala (opcional)", height=200)
 
     salvar = st.button("Cadastrar", key="primary")
-
+    # Instancia
+    instancia =session.query(Igrejas).get(igreja_id).instancia
+    
     if salvar:
         try:
             # Validações
@@ -136,6 +170,40 @@ with st.container(border=True):
 
                 )
                 session.add(nova_escala)
+                # Textos
+                nome = session.query(Participantes).get(p_id).nome.upper()
+                evento_obj = session.query(Eventos).get(evento)
+                evento_nome = evento_obj.nome
+                evento_data = evento_obj.data.strftime('%d/%m/%Y')
+                evento_hora = evento_obj.hora.strftime('%H:%M') if evento_obj.hora else "Não especificada"
+                ministerio_nome = session.query(Ministerios).get(ministerio).nome.upper()
+                funcao_nome = session.query(Funcoes).get(f_id).nome
+                igreja_nome = session.query(Igrejas).get(igreja_id).nome.upper()
+
+                responsavel_telefone = st.session_state.telefone
+
+                link_responsavel = f"https://api.whatsapp.com/send?phone={responsavel_telefone}"
+
+                texto = (
+                    f"📣 Olá {nome}!\n\n"
+                    f"Você foi escalado para o evento abaixo 🎉\n\n"
+                    f"🏛️ *Igreja:* {igreja_nome}\n"
+                    f"🗓️ *Evento:* {evento_nome}\n"
+                    f"📅 *Data:* {evento_data}\n"
+                    f"⏰ *Horário:* {evento_hora}\n"
+                    f"🙌 *Ministério:* {ministerio_nome}\n"
+                    f"👤 *Função:* {funcao_nome}\n\n"
+                    f"⚠️ Caso não possa comparecer, fale diretamente com o responsável clicando no link abaixo:\n"
+                    f"{link_responsavel}\n\n"
+                    f"Qualquer dúvida, estamos à disposição 🙏\n"
+                    f"Equipe {igreja_nome}"
+                )
+                resp = send_whatsapp_message(
+                    number=session.query(Participantes).get(p_id).telefone,
+                    text=texto,
+                    instance_name=instancia
+                )
+
 
             session.commit()
             nova_desc = DescricaoEscala(

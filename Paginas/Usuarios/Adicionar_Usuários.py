@@ -20,6 +20,7 @@ with st.form("form_cadastro", clear_on_submit=True):
     nome = st.text_input("Nome completo")
     cpf = st.text_input("Usuário", placeholder='Digite seu CPF')
     perfil = st.selectbox('Perfil',options=['Administrador','Líder','Auxiliar'],index=None)
+    telefone = st.text_input("Nº do telefone", placeholder='Apenas números! Ex. 81988887777',help='Não precisa colocar parênteses e nem traços ex: (81) 98888-7777')
     senha = st.text_input("Senha", type="password")
     confirmar = st.text_input("Confirmar senha", type="password")
     enviar = st.form_submit_button("Cadastrar", key='success')
@@ -37,6 +38,7 @@ with st.form("form_cadastro", clear_on_submit=True):
                     nome=nome,
                     cpf=cpf,
                     perfil=perfil,
+                    telefone=telefone,
                     password=senha_hash,
                     igreja_id=igreja_id
                 )

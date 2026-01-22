@@ -33,6 +33,7 @@ class Igrejas(Base):
     __tablename__ = "igrejas"
     id = Column(Integer, primary_key=True, autoincrement=True)
     nome = Column(String, nullable=False)
+    instancia = Column(String, nullable=True)
 
     usuarios = relationship("Usuarios", back_populates="igreja")
     participantes = relationship("Participantes", back_populates="igreja")
@@ -59,6 +60,7 @@ class Usuarios(Base):
     cpf = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False)
     perfil = Column(String, nullable=False)  # admin, lider, parcipante
+    telefone = Column(String, nullable=True)
     igreja_id = Column(Integer, ForeignKey("igrejas.id"), nullable=False)
 
     igreja = relationship("Igrejas", back_populates="usuarios")

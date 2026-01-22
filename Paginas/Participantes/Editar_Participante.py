@@ -12,7 +12,13 @@ session = SessionLocal()
 st.title("✏️ Editar Participante")
 
 # Buscar todos os participantes cadastrados
-participantes = session.query(Participantes).all()
+igreja_id = st.session_state.igreja
+perfil = st.session_state.perfil
+
+if perfil == 'Supervisor':
+    participantes = session.query(Participantes).all()
+elif perfil == 'Administrador':
+    participantes = session.query(Participantes).filter_by(igreja_id=igreja_id)
 
 if not participantes:
     st.warning("Nenhum participante cadastrado ainda.")
@@ -57,7 +63,7 @@ else:
         if salvar:
             try:
                 participante_selecionado.nome = novo_nome.strip()
-                participante_selecionado.telefone = telefone.strip()
+                participante_selecionado.telefone = '55'+telefone.strip()
 
                 # Atualizar ministérios
                 participante_selecionado.ministerios.clear()

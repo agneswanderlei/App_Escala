@@ -1,12 +1,54 @@
 import streamlit as st
 from db import SessionLocal
-from models import Eventos, Ministerios, Participantes, Escalas, Funcoes, participante_funcao, Indisponibilidades, DescricaoEscala
+from models import Eventos, Ministerios, Participantes, Escalas, Funcoes, participante_funcao, Indisponibilidades, DescricaoEscala, Igrejas
 import pandas as pd
+import requests
+from dotenv import load_dotenv
+import os
+from pathlib import Path
+
+
+# Força o caminho absoluto para o .env na raiz
+env_path = Path(__file__).resolve().parents[2] / ".env"
+
+load_dotenv(env_path)
+EVOLUTION_AUTHENTICATION_API_KEY = os.getenv('AUTHENTICATION_API_KEY')
 
 st.set_page_config(layout='centered')
 with open('Paginas/Usuarios/styles.css') as f:
     st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+
+def send_whatsapp_message(number: str, text: str, instance_name: str):
+    """
+    Envia uma mensagem de texto via WhatsApp.
+    O nome da instância é passado dinamicamente.
+    """
+    url = f'http://72.60.155.96:8080/message/sendText/{instance_name}'
+    headers = {
+        'apikey': EVOLUTION_AUTHENTICATION_API_KEY,
+        'Content-Type': 'application/json'
+    }
+    payload = {
+        'number': number,
+        'text': text,
+    }
+    response = requests.post(
+        url=url,
+        json=payload,
+        headers=headers
+    )
+    return response.json()
 session = SessionLocal()
+def carregar_escalas():
+    evento_id = st.session_state["evento_select"]  # pega o valor do selectbox
+    if evento_id:
+        escalas_db = session.query(Escalas).filter_by(
+            igreja_id=igreja_id, evento_id=evento_id
+        ).all()
+        st.session_state.lista_participante_escala_funcao = [
+            (esc.participante_id, esc.funcao_id, esc.ministerio_id)
+            for esc in escalas_db
+        ]
 
 st.title("📋 Editar Escalas")
 
@@ -26,7 +68,10 @@ with st.container(border=True):
             'Eventos',
             options=[e.id for e in eventos],
             format_func=lambda x: next(f"{e.nome} - {e.data.strftime('%d/%m/%Y')} - {e.hora.strftime('%H:%M')}" for e in eventos if e.id == x),
-            index=None
+            index=None,
+            key='evento_select',
+            on_change=carregar_escalas
+
         )
         ministerio = st.selectbox(
             'Ministérios',
@@ -36,17 +81,10 @@ with st.container(border=True):
         )
 
     # Inicializar state com escalas do evento
-    if evento:
-        if not st.session_state.lista_participante_escala_funcao:
-            escalas_db = session.query(Escalas).filter_by(igreja_id=igreja_id, evento_id=evento).all()
-            
-            st.session_state.lista_participante_escala_funcao = [
-                (esc.participante_id, esc.funcao_id, esc.ministerio_id)
-                for esc in escalas_db
-            ]
-        st.write(st.session_state.lista_participante_escala_funcao)
-    else:
+    if not evento:
+        
         st.info('Selecione um evento.')
+    
     ## Seleção de participante e função
     # Seleção de participante
     with st.container(horizontal=True, vertical_alignment='bottom'):
@@ -88,8 +126,8 @@ with st.container(border=True):
 
     # Verificar impedimentos e duplicidade
     conflitos = 0
+    evento_obj = session.query(Eventos).get(evento)
     if participante and evento:
-        evento_obj = session.query(Eventos).get(evento)
         # 1. Verificar indisponibilidade considerando intervalo de horas
         indisponibilidades = session.query(Indisponibilidades).filter_by(
             participante_id = participante,
@@ -152,29 +190,111 @@ with st.container(border=True):
             igreja_id=igreja_id,
             evento_id=evento
         ).all()
-        indisp = session.query(Indisponibilidades).filter_by(
-            igreja_id=igreja_id,
-            data=evento_obj.data
-        )
+        if evento:
+            indisp = session.query(Indisponibilidades).filter_by(
+                igreja_id=igreja_id,
+                data=evento_obj.data
+            )
 
         atualizar = st.button('Atualizar', key='success')
         if atualizar:
-            for (p_id,_,_) in st.session_state.lista_participante_escala_funcao:
-                if p_id in [p.ministerio_id for p in escala_evento]:
-                    st.toast(f'O participante **{session.query(Escalas).filter_by(participante_id=p_id).first().participante.nome}** já está escalado no ministério **{session.query(Escalas).filter_by(participante_id=p_id).first().ministerio.nome}** !',icon='⚠️')
-                    st.stop()
-                indisp = session.query(Indisponibilidades).filter_by(
+            # Instancia
+            instancia =session.query(Igrejas).get(igreja_id).instancia
+            try:
+                # 1. Apagar escalas antigas do evento
+                session.query(Escalas).filter_by(
                     igreja_id=igreja_id,
-                    data=evento_obj.data,
-                    participante_id=p_id
-                ).all()
-                for ind in indisp:
-                    if ind.hora_inicio <= evento_obj.hora <= ind.hora_fim:
-                        st.toast(
-                            f"⚠️ O participante está indisponível em "
-                            f"{evento_obj.data.strftime('%d/%m/%Y')}"
-                            f" das {ind.hora_inicio.strftime('%H:%M')} as {ind.hora_fim.strftime('%H:%M')}",
-                            icon='⚠️'
-                        )
+                    evento_id=evento
+                ).delete()
+
+                # 2. Recriar escalas a partir do state
+                for (p_id, f_id, m_id) in st.session_state.lista_participante_escala_funcao:
+                    # Verificar indisponibilidade
+                    indisp = session.query(Indisponibilidades).filter_by(
+                        igreja_id=igreja_id,
+                        participante_id=p_id,
+                        data=evento_obj.data
+                    )
+                    conflito = False
+                    for ind in indisp:
+                        if ind.hora_inicio and ind.hora_fim and evento_obj.hora:
+                            if ind.hora_inicio <= evento_obj.hora <= ind.hora_fim:
+                                st.toast(
+                                    f"⚠️ O participante {session.query(Participantes).get(p_id).nome} "
+                                    f"está indisponível em {evento_obj.data.strftime('%d/%m/%Y')} "
+                                    f"das {ind.hora_inicio.strftime('%H:%M')} às {ind.hora_fim.strftime('%H:%M')}",
+                                    icon='⚠️'
+
+                                )
+                                conflito = True
+                    if conflito:
+                        continue
+                    nova = Escalas(
+                        evento_id=evento,
+                        ministerio_id=m_id,
+                        participante_id=p_id,
+                        funcao_id=f_id,
+                        igreja_id=igreja_id
+                    )
+                    session.add(nova)
+                    # ENVIAR MENSAGENS
+                    nome = session.query(Participantes).get(p_id).nome.upper()
+                    evento_obj = session.query(Eventos).get(evento)
+                    evento_nome = evento_obj.nome
+                    evento_data = evento_obj.data.strftime('%d/%m/%Y')
+                    evento_hora = evento_obj.hora.strftime('%H:%M') if evento_obj.hora else "Não especificada"
+                    ministerio_nome = session.query(Ministerios).get(ministerio).nome.upper()
+                    funcao_nome = session.query(Funcoes).get(f_id).nome
+                    igreja_nome = session.query(Igrejas).get(igreja_id).nome.upper()
+
+                    responsavel_telefone = st.session_state.telefone
+
+                    link_responsavel = f"https://api.whatsapp.com/send?phone={responsavel_telefone}"
+
+                    texto = (
+                        f"🔄 *ESCALA ALTERADA*!\n\n"
+                        f"📣 Olá {nome}!\n\n"
+                        f"Você foi escalado para o evento abaixo 🎉\n\n"
+                        f"🏛️ *Igreja:* {igreja_nome}\n"
+                        f"🗓️ *Evento:* {evento_nome}\n"
+                        f"📅 *Data:* {evento_data}\n"
+                        f"⏰ *Horário:* {evento_hora}\n"
+                        f"🙌 *Ministério:* {ministerio_nome}\n"
+                        f"👤 *Função:* {funcao_nome}\n\n"
+                        f"⚠️ Caso não possa comparecer, fale diretamente com o responsável clicando no link abaixo:\n"
+                        f"{link_responsavel}\n\n"
+                        f"Qualquer dúvida, estamos à disposição 🙏\n"
+                        f"Equipe {igreja_nome}"
+                    )
+                    resp = send_whatsapp_message(
+                        number=session.query(Participantes).get(p_id).telefone,
+                        text=texto,
+                        instance_name=instancia
+                    )
+                # 3. Atualizar descrição geral
+                desc_obj = session.query(DescricaoEscala).filter_by(
+                    igreja_id=igreja_id,
+                    evento_id=evento,
+                    ministerio_id=ministerio
+                ).first()
+                # 3.1 Condição para se já tiver atualizar se nao criar uma nova descrição
+                if desc_obj:
+                    desc_obj.descricao = descricao
+                else:
+                    nova_desc = DescricaoEscala(
+                        igreja_id=igreja_id,
+                        evento_id=evento,
+                        ministerio_id=ministerio,
+                        descricao=descricao,
+                    )
+                    session.add(nova_desc)
+
+                # 4. Commit
+                session.commit()
+                st.toast('Escala atualizada com sucesso!', icon='✅')
+                
+            except Exception as e:
+                session.rollback()
+                st.error(f'Erro ao atualizar: {e}')
                 
         deletar = st.button('Deletar', key='danger')

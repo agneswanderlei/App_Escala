@@ -15,7 +15,7 @@ st.title("📋 Cadastro de Igrejas")
 
 with st.form("form_cadastro"):
     nome = st.text_input("Nome da igreja")
-    
+    instancia = st.text_input("Nome da Instância")
     salvar = st.form_submit_button("Cadastrar", key='success')
 
     if salvar:
@@ -24,7 +24,10 @@ with st.form("form_cadastro"):
         else:
             try:
                 # cria objeto da igreja
-                nova_igreja = Igrejas(nome=nome.strip())
+                nova_igreja = Igrejas(
+                    nome=nome.strip(),
+                    instancia=instancia.strip()
+                )
                 session.add(nova_igreja)
                 session.commit()
                 st.success(f"Igreja '{nome}' cadastrada com sucesso!")

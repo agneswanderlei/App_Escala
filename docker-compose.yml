@@ -1,0 +1,92 @@
+services:
+
+  evolution-api:
+    container_name: evolution_api2-escala
+    image: evoapicloud/evolution-api:v2.3.6
+    restart: always
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    volumes:
+      - evolution_instances:/evolution/instances
+    depends_on:
+      - postgres
+      - redis 
+
+  postgres:
+    container_name: postgres-escala
+    image: postgres:15
+    command: ["postgres", "-c", "max_connections=1000"]
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    expose:
+      - 5432
+
+  redis:
+    image: redis:latest
+    container_name: redis-escala
+    command: >
+      redis-server --port 6379 --appendonly yes
+    volumes:
+      - redis:/data
+    ports:
+      - 6379:6379
+      
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
+    container_name: streamlit-escala
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    volumes:
+      - .:/app  # <--- LINHA CRUCIAL ADICIONADA
+    depends_on:
+      # - evolution-api
+      - postgres
+    
+  # scheduler:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.scheduler
+  #   container_name: scheduler2
+  #   depends_on:
+  #     # - evolution-api
+  #     # - redis # <-- MANTIDO
+  #     - postgres
+  #   env_file:
+  #     - .env
+  #   volumes:
+  #     - .:/app
+
+  pgadmin: # <-- NOVO SERVIÇO
+    container_name: pgadmin4-escala
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      # Credenciais de acesso ao PgAdmin (interface web). Você as define aqui.
+      PGADMIN_DEFAULT_EMAIL: admin@mydomain.com
+      PGADMIN_DEFAULT_PASSWORD: 1012ar1987
+    ports:
+      - "5050:80" # Mapeia a porta 80 interna do PgAdmin para a porta 5050 do seu PC
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres # Garante que o banco de dados inicie primeiro
+
+
+volumes:
+  evolution_instances:
+  postgres_data:
+  redis:
+  pgadmin_data:

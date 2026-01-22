@@ -106,6 +106,7 @@ pages = {
     'Usuários': [
         os.path.join('Paginas','Usuarios','Home_Usuários.py'),
         os.path.join('Paginas','Usuarios','Adicionar_Usuários.py'),
+        os.path.join('Paginas','Usuarios','Editar_Contato.py'),
         os.path.join('Paginas','Usuarios','Editar_Perfil.py'),
         os.path.join('Paginas','Usuarios','Editar_Senha.py'),
         os.path.join('Paginas','Usuarios','Excluir_Usuários.py'),
@@ -122,6 +123,7 @@ if st.session_state.get('authentication_status'):
 
     st.session_state['perfil'] = usuario_logado.perfil
     st.session_state['nome'] = usuario_logado.nome
+    st.session_state['telefone'] = usuario_logado.telefone
     st.session_state['igreja'] = usuario_logado.igreja_id
     st.session_state['user_id'] = usuario_logado.id 
 

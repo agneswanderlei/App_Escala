@@ -28,6 +28,8 @@ else:
 
     with st.form("form_editar"):
         novo_nome = st.text_input("Novo nome da igreja", value=igreja_selecionada.nome)
+        instancia = st.text_input("Nome da Instância")
+
         with st.container(horizontal=True, vertical_alignment='bottom'):
             salvar = st.form_submit_button("Salvar alterações", key='primary')
             deletar = st.form_submit_button('Deletar', key='danger')
@@ -35,6 +37,8 @@ else:
         if salvar:
             try:
                 igreja_selecionada.nome = novo_nome.strip()
+                igreja_selecionada.instancia = instancia.strip()
+
                 session.commit()
                 st.success(f"Igreja atualizada para '{novo_nome}' com sucesso!")
             except Exception as e:
