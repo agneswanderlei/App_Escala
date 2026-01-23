@@ -1,6 +1,6 @@
 import streamlit as st
 from db import SessionLocal
-from models import Eventos, Ministerios, Participantes, Indisponibilidades, Escalas, participante_funcao, Funcoes, DescricaoEscala, Igrejas
+from models import Eventos, Ministerios, Participantes, Indisponibilidades, Escalas, participante_funcao, Funcoes, DescricaoEscala, Igrejas, Usuarios
 import pandas as pd
 from Paginas.Escalas.jobs import enviar_lembrete
 from Paginas.Escalas.Enviar_mensagens import send_whatsapp_message
@@ -28,11 +28,14 @@ if perfil == 'Supervisor':
     ministerios = session.query(Ministerios).all()
     eventos = session.query(Eventos).all()
     participantes = session.query(Participantes).all()
-else:
+if perfil == 'Administrador':
     ministerios = session.query(Ministerios).filter_by(igreja_id=igreja_id).all()
     eventos = session.query(Eventos).filter_by(igreja_id=igreja_id).all()
     participantes = session.query(Participantes).filter_by(igreja_id=igreja_id).all()
-
+if perfil == 'Líder':
+    usuario_logado = session.query(Usuarios).get(st.session_state.user_id)
+    ministerios = usuario_logado.ministerios
+    eventos = session.query(Eventos).filter_by(igreja_id=igreja_id).all()
 eventos_id = [e.id for e in eventos]
 ministerios_id = [m.id for m in ministerios]
 
@@ -177,7 +180,7 @@ with st.container(border=True):
                     f"Equipe {igreja_nome}"
                 )
                 resp = send_whatsapp_message(
-                    number=session.query(Participantes).get(p_id).telefone,
+                    number='55'+ session.query(Participantes).get(p_id).telefone,
                     text=texto,
                     instance_name=instancia
                 )

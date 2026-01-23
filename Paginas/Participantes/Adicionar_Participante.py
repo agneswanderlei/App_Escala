@@ -46,7 +46,7 @@ with st.container(border=True):
                         usuario_id=None,
                         nome=nome_extra.strip(),
                         igreja_id=st.session_state.igreja,
-                        telefone='55'+telefone.strip(),
+                        telefone=telefone.strip(),
                     )
             else:
                 usuario_id = int(escolha.split(" - ")[0])

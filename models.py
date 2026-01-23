@@ -18,6 +18,12 @@ participante_funcao = Table(
     Column("participante_id", Integer, ForeignKey("participantes.id")),
     Column("funcao_id", Integer, ForeignKey("funcoes.id"))
 )
+usuario_ministerio = Table(
+    'usuario_ministerio',
+    Base.metadata,
+    Column('usuario_id', Integer, ForeignKey('usuarios.id')),
+    Column('ministerio_id', Integer, ForeignKey('ministerios.id'))
+)
 
 class Funcoes(Base):
     __tablename__ = "funcoes"
@@ -44,14 +50,6 @@ class Igrejas(Base):
     liturgias = relationship("Liturgias", back_populates="igreja")
     indisponibilidades = relationship("Indisponibilidades", back_populates="igreja")
 
-class Permissoes(Base):
-    __tablename__ = "permissoes"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
-    pagina = Column(String, nullable=False)
-
-    usuario = relationship("Usuarios", back_populates="permissoes")
-
 
 class Usuarios(Base):
     __tablename__ = "usuarios"
@@ -62,10 +60,10 @@ class Usuarios(Base):
     perfil = Column(String, nullable=False)  # admin, lider, parcipante
     telefone = Column(String, nullable=True)
     igreja_id = Column(Integer, ForeignKey("igrejas.id"), nullable=False)
-
+    
+    ministerios = relationship('Ministerios', secondary=usuario_ministerio, back_populates='usuarios')
     igreja = relationship("Igrejas", back_populates="usuarios")
     participante = relationship("Participantes", uselist=False, back_populates="usuario")
-    permissoes = relationship("Permissoes", back_populates="usuario", cascade="all, delete-orphan")
 
 
 class Indisponibilidades(Base):
@@ -105,7 +103,7 @@ class Ministerios(Base):
     igreja = relationship("Igrejas", back_populates="ministerios")
     participantes = relationship("Participantes", secondary=participante_ministerio, back_populates="ministerios")
     escalas = relationship("Escalas", back_populates="ministerio")
-
+    usuarios = relationship('Usuarios', secondary=usuario_ministerio, back_populates='ministerios')
 
 class Eventos(Base):
     __tablename__ = "eventos"

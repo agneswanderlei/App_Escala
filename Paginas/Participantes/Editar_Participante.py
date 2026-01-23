@@ -63,7 +63,7 @@ else:
         if salvar:
             try:
                 participante_selecionado.nome = novo_nome.strip()
-                participante_selecionado.telefone = '55'+telefone.strip()
+                participante_selecionado.telefone = telefone.strip()
 
                 # Atualizar ministérios
                 participante_selecionado.ministerios.clear()

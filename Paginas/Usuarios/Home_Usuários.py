@@ -1,8 +1,6 @@
 import streamlit as st
-import os
-import streamlit_authenticator as stauth
 from db import SessionLocal
-from models import Usuarios, Igrejas
+from models import Usuarios, Ministerios
 import pandas as pd
 
 st.set_page_config(layout='centered')
@@ -24,24 +22,30 @@ else:
 if usuarios:
     st.subheader('Lista dos Usuários 📋')
 
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        usuario_nome = st.multiselect('Nome', options=[u.nome for u in usuarios])
-    with col2:
-        usuario = st.multiselect('Usuário', options=[u.cpf for u in usuarios])
-    with col3:
-        perfil = st.multiselect('Perfil', options=[u.perfil for u in usuarios])
-    with col4:
-        # Buscar todas as igrejas dos usuários
-        igrejas = [u.igreja.nome for u in usuarios if u.igreja]
+    with st.expander('Filtros'):
+        with st.container(horizontal=True):
+            
+            # Buscar todas as igrejas dos usuários
+            igrejas = [u.igreja.nome for u in usuarios if u.igreja]
 
-        # Remover duplicados mantendo a ordem
-        igrejas_unicas = list(dict.fromkeys(igrejas))
+            # Remover duplicados mantendo a ordem
+            igrejas_unicas = list(dict.fromkeys(igrejas))
 
-        igreja_filtro = st.multiselect(
-            "Igreja",
-            options=igrejas_unicas
-        )
+            igreja_filtro = st.multiselect(
+                "Igreja",
+                options=igrejas_unicas,
+                placeholder='Escolha a Igreja'
+            )
+            usuario_nome = st.multiselect('Nome', options=[u.nome for u in usuarios], placeholder='Escolha o nome')
+            usuario = st.multiselect('Usuário', options=[u.cpf for u in usuarios], placeholder='Escolha o CPF')
+        with st.container(horizontal=True):
+            perfil = st.multiselect('Perfil', options=set([u.perfil for u in usuarios]), placeholder='Escolha o perfil')
+            ministerios_all = session.query(Ministerios).filter_by(igreja_id=igreja_logada)
+            ministerios = st.multiselect(
+                'Ministérios',
+                options=[m.nome for m in ministerios_all],
+                placeholder='Escolha os ministérios'
+            )
 
         
 
@@ -51,7 +55,8 @@ if usuarios:
             'nome': u.nome,
             'cpf': u.cpf,
             'perfil': u.perfil,
-            'igreja': u.igreja.nome if u.igreja else "-"
+            'igreja': u.igreja.nome if u.igreja else "-",
+            'ministerios': ', '.join([m.nome for m in u.ministerios] or '-')
         }
         for u in usuarios
     ]
@@ -66,16 +71,19 @@ if usuarios:
         df_usuarios = df_usuarios[df_usuarios['perfil'].isin(perfil)]
     if igreja_filtro:
         df_usuarios = df_usuarios[df_usuarios['igreja'].isin(igreja_filtro)]
+    if ministerios:
+        df_usuarios = df_usuarios[df_usuarios['ministerios'].apply(lambda x: any(m in x for m in ministerios))]
 
     # Renomear colunas
     df_usuarios = df_usuarios.rename(
         columns={
             'nome': 'Nome',
-            'cpf': 'Usuário',
+            'cpf': 'CPF',
             'perfil': 'Perfil',
-            'igreja': 'Igreja'
+            'igreja': 'Igreja',
+            'ministerios': 'Ministérios'
         }
     )
 
     # Mostrar tabela
-    st.dataframe(df_usuarios[['Nome', 'Usuário', 'Perfil', 'Igreja']])
+    st.dataframe(df_usuarios[['Nome', 'CPF', 'Perfil', 'Igreja', 'Ministérios']])

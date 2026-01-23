@@ -155,19 +155,6 @@ if st.session_state.get('authentication_status'):
         pg = st.navigation(pages, position='top', expanded=False)
         pg.run()
     elif perfil_usuario == 'Líder':
-        pages = {
-            'Home': [
-                os.path.join('Paginas','Home','Home.py')
-            ],
-            'Usuários': [
-                os.path.join('paginas','Usuarios','Home_Usuários.py'),
-                os.path.join('paginas','Usuarios','Adicionar_Usuários.py'),
-                # os.path.join('paginas','Usuarios','Editar_Perfil.py'),
-                # os.path.join('paginas','Usuarios','Editar_Senha.py'),
-                # os.path.join('paginas','Usuarios','Excluir_Usuarios.py'),
-
-            ]
-        }
         pg = st.navigation(pages, position='top', expanded=False)
         pg.run()
     else:

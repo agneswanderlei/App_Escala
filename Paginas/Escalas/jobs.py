@@ -28,5 +28,5 @@ def enviar_lembrete(p_id, evento_id, ministerio_nome, funcao_nome, igreja_nome, 
         f"{link_responsavel}\n\n"
         f"Equipe {igreja_nome}"
     )
-
-    send_whatsapp_message(participante.telefone, texto, instancia)
+    telefone = '55'+ participante.telefone
+    send_whatsapp_message(telefone, texto, instancia)
