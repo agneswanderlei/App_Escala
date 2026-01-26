@@ -34,7 +34,7 @@ id_selecionado = st.selectbox(
     ids,
     help='"🔍 Buscar Usuário"',
     placeholder='Digite o usuário.',
-    format_func=lambda x: f'{x} - {next(p.cpf for p in usuarios if p.id==x)}'
+    format_func=lambda x: next(f'{p.cpf} - {p.nome}' for p in usuarios if p.id==x)
 )
 
 usuario = session.query(Usuarios).filter(Usuarios.id == id_selecionado).first()

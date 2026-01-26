@@ -39,7 +39,7 @@ if usuarios:
     id_selecionado = st.selectbox(
         "Selecione o usuário para excluir:",
         ids,
-        format_func=lambda x: f"{x} - {next(u.nome for u in usuarios if u.id == x)}"
+        format_func=lambda x: next(f'{u.cpf} - {u.nome}' for u in usuarios if u.id == x)
     )
 
     usuario = session.query(Usuarios).filter(Usuarios.id == id_selecionado).first()

@@ -46,6 +46,34 @@ with st.expander("Filtros"):
         st.warning("Nenhum evento encontrado com os filtros aplicados.")
         st.stop()
 
+# --- Escolher visualização ---
+modo = st.radio("Modo de visualização:", ["Tabela", "Expanders"], horizontal=True)
 
+if modo == "Tabela":
+    dados = []
+    for e in eventos:
+        dados.append({
+            "Nome": e.nome,
+            "Data": e.data.strftime('%d/%m/%Y'),
+            "Hora": e.hora.strftime('%H:%M') if e.hora else "Não especificada",
+            "Descrição": e.descricao or "Nenhuma descrição fornecida."
+        })
+    st.dataframe(pd.DataFrame(dados))
+
+else:  # Expanders
+    for e in eventos:
+        with st.expander(f"📌 {e.nome} — {e.data.strftime('%d/%m/%Y')}"):
+            st.write(f"**Nome:** {e.nome}")
+            st.write(f"**Data:** {e.data.strftime('%d/%m/%Y')}")
+            st.write(f"**Hora:** {e.hora.strftime('%H:%M') if e.hora else 'Não especificada'}")
+            
+            st.markdown("### 👥 Escalados")
+            st.write("- Em breve será implementado -")
+            
+            st.markdown("### 📖 Liturgia")
+            st.write("- Em breve será implementado -")
+            
+            st.markdown("### 📝 Descrição")
+            st.write(e.descricao or "Nenhuma descrição fornecida.")
 
 session.close()
