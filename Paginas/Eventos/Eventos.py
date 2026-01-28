@@ -1,9 +1,10 @@
 import streamlit as st
 from db import SessionLocal
-from models import Eventos
+from models import Eventos, Escalas, DescricaoEscala
 import pandas as pd
 import datetime
-
+from streamlit_calendar import calendar
+from Paginas.Eventos.modal_eventos import detalhes
 st.set_page_config(layout='centered')
 session = SessionLocal()
 
@@ -18,9 +19,10 @@ hoje = datetime.date.today()
 # --- Buscar eventos conforme perfil, apenas futuros ---
 if perfil == 'Supervisor':
     eventos = session.query(Eventos).order_by(Eventos.data.asc()).all()
+    escalas = session.query(Escalas).all()
 else:
     eventos = session.query(Eventos).filter_by(igreja_id=igreja_id).order_by(Eventos.data.asc()).all()
-
+    escalas = session.query(Escalas).filter_by(igreja_id=igreja_id).all()
 if not eventos:
     st.warning("Nenhum evento encontrado.")
     st.stop()
@@ -46,6 +48,45 @@ with st.expander("Filtros"):
         st.warning("Nenhum evento encontrado com os filtros aplicados.")
         st.stop()
 
+# Converter eventos para o formato do FullCalendar
+eventos_data = [
+    {
+        "title": e.nome,
+        "start": e.data.strftime("%Y-%m-%d") + ("T" + e.hora.strftime("%H:%M") if e.hora else ""),
+        "end": e.data.strftime("%Y-%m-%d") + ("T" + e.hora.strftime("%H:%M") if e.hora else ""),
+        "backgroundColor": "#4CAF50",  # cor personalizada
+        "borderColor": "#388E3C",
+        "extendedProps": {  # Adicionar dados extras aqui
+            "id": e.id,
+            "descricao": e.descricao if hasattr(e, 'descricao') else '-',
+            "igreja": e.igreja.nome if hasattr(e, 'igreja') else '-',
+            "data_formatada": e.data.strftime('%d/%m/%Y'),
+            "hora_formatada": e.hora.strftime('%H:%M') if e.hora else '-'
+        }
+    }
+    for e in eventos
+]
 
+# Renderizar calendário
+calendar_response = calendar(
+    events=eventos_data,
+    options={
+        "initialView": "dayGridMonth",
+        "locale": "pt-br"
+    }
+)
+
+# Capturar clique no evento
+if calendar_response and "eventClick" in calendar_response:
+    evento = calendar_response["eventClick"]["event"]
+    evento_id = evento['extendedProps']['id']
+    escala_evento = session.query(Escalas).filter_by(evento_id=evento_id).all()
+    descricao_escala = session.query(DescricaoEscala).filter_by(evento_id=evento_id).all()
+    # Abrir modal com @dialog
+    @st.dialog("Detalhes do Evento", width='medium')
+    def mostrar_detalhes():
+        detalhes(evento=evento, escalas=escala_evento, descricao=descricao_escala) 
+    
+    mostrar_detalhes()
 
 session.close()
