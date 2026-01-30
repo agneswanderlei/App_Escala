@@ -298,3 +298,10 @@ with st.container(border=True):
                 st.error(f'Erro ao atualizar: {e}')
                 
         deletar = st.button('Deletar', key='danger')
+        if deletar:
+            @st.dialog('Confirmar Exclusão')
+            def msg_confirmacao():
+                ministerio_name = session.query(Ministerios).get(ministerio)
+                st.write(f'deseja excluir a escala: **{ministerio_name.nome}**')
+
+            msg_confirmacao()

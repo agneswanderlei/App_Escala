@@ -19,7 +19,6 @@ session = SessionLocal()
 if 'lista_participante_funcao' not in st.session_state:
     st.session_state.lista_participante_funcao = {}
 scheduler = st.session_state.scheduler
-st.title("📋 Cadastro de Escala")
 
 perfil = st.session_state.perfil
 igreja_id = st.session_state.igreja
@@ -136,11 +135,33 @@ with st.container(border=True):
                 nomes_indisponiveis = ', '.join([session.query(Participantes).get(pid).nome for pid in conflitos])
                 st.error(f"Os seguintes participantes estão indisponíveis no horário do evento: {nomes_indisponiveis}")
                 st.stop()
+            desc_existente = session.query(DescricaoEscala).filter_by(
+                evento_id=evento,
+                ministerio_id=ministerio,
+                igreja_id=igreja_id
+            ).first()
+            if desc_existente and descricao:
+                desc_existente.descricao = descricao
+                # Para atualizar nao precisa de commit
+            elif not desc_existente and descricao:
+                nova_desc = DescricaoEscala(
+                evento_id=evento,
+                ministerio_id=ministerio,
+                igreja_id=igreja_id,
+                descricao=descricao,
+                )
+
+                session.add(nova_desc)
+                session.commit()
             # Aqui você deve salvar na tabela Escalas
             for p_id, (f_id,m_id) in st.session_state.lista_participante_funcao.items():
-                ministerio_add = session.query(Escalas).filter_by(ministerio_id=m_id,igreja_id=igreja_id, evento_id=evento).first()
-                if ministerio_add:
-                    st.warning(f'O ministerio {ministerio_add.ministerio.nome} já foi cadastrado para o evento {ministerio_add.evento.nome}!')
+                # verificar se este participante está escalado
+                participante_escalado = session.query(Escalas).filter_by(
+                    participante_id=p_id,
+                    evento_id=evento
+                ).first()
+                if participante_escalado:
+                    st.warning(f'Participante {participante_escalado.participante.nome} já está escalado no ministério {participante_escalado.ministerio.nome} para este evento')
                     st.stop()
                 nova_escala = Escalas(
                     evento_id=evento,
@@ -214,16 +235,10 @@ with st.container(border=True):
                 )
 
             session.commit()
-            nova_desc = DescricaoEscala(
-                evento_id=evento,
-                ministerio_id=ministerio,
-                igreja_id=igreja_id,
-                descricao=descricao,
-            )
-
-            session.add(nova_desc)
-            session.commit()
+            
             st.success("Escala cadastrada com sucesso!")
+            del st.session_state.lista_participante_funcao
+            st.rerun()
         except Exception as e:
             session.rollback()
             st.error(f"Erro ao cadastrar Escala: {e}")

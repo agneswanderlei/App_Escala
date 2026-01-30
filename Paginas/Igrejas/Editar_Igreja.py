@@ -28,7 +28,7 @@ else:
 
     with st.form("form_editar"):
         novo_nome = st.text_input("Novo nome da igreja", value=igreja_selecionada.nome)
-        instancia = st.text_input("Nome da Instância")
+        instancia = st.text_input("Nome da Instância", value=igreja_selecionada.instancia)
 
         with st.container(horizontal=True, vertical_alignment='bottom'):
             salvar = st.form_submit_button("Salvar alterações", key='primary')

@@ -71,8 +71,10 @@ eventos_data = [
 calendar_response = calendar(
     events=eventos_data,
     options={
-        "initialView": "dayGridMonth",
-        "locale": "pt-br"
+        "initialView": "listMonth",
+        "locale": "pt-br",
+        "firstDay": 1,
+        "eventDisplay": "block"
     }
 )
 
