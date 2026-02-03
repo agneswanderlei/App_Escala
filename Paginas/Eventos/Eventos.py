@@ -29,13 +29,27 @@ if not eventos:
 
 # --- Filtros ---
 with st.expander("Filtros"):
-    nome_filtro = st.text_input("Filtrar por nome do evento:")
     with st.container(horizontal=True):
-        data_inicial = st.date_input("Data Inicial:", value=hoje, format="DD/MM/YYYY")
+        nome_filtro = st.text_input("Filtrar por nome do evento:")
+        nome_participante = st.text_input("Filtrar por participante")
+    with st.container(horizontal=True):
+        data_inicial = st.date_input("Data Inicial:", value=None, format="DD/MM/YYYY")
         data_final = st.date_input("Data Final:", value=None, format="DD/MM/YYYY")
 
-    if nome_filtro:
+    # Filtro por nome do evento
+    if nome_filtro and nome_filtro.strip():
         eventos = [e for e in eventos if nome_filtro.lower() in e.nome.lower()]
+
+    # Filtro por participante
+    if nome_participante and nome_participante.strip():
+        eventos = [
+            e for e in eventos
+            if any(
+                nome_participante.lower() in escala.participante.nome.lower()
+                for escala in e.escalas if escala.participante
+            )
+        ]
+
     # Filtro por data inicial/final
     if data_inicial and data_final:
         eventos = [e for e in eventos if data_inicial <= e.data <= data_final]
@@ -74,7 +88,12 @@ calendar_response = calendar(
         "initialView": "listMonth",
         "locale": "pt-br",
         "firstDay": 1,
-        "eventDisplay": "block"
+        "eventDisplay": "block",
+        "headerToolbar": {
+            "left": "prev,next today",
+            "center": "title",
+            "right": "dayGridMonth,listMonth"
+        }
     }
 )
 

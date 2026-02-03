@@ -240,7 +240,6 @@ with st.container(border=True):
             
             st.success("Escala cadastrada com sucesso!")
             del st.session_state.lista_participante_funcao
-            st.rerun()
         except Exception as e:
             session.rollback()
             st.error(f"Erro ao cadastrar Escala: {e}")

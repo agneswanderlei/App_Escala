@@ -115,6 +115,11 @@ pages = {
         os.path.join('Paginas','Escalas','Adicionar_Escala.py'),
         os.path.join('Paginas','Escalas','Editar_Escala.py'),
     ],
+    'Liturgia': [
+        # os.path.join('Paginas','Liturgias','Liturgias.py'),
+        os.path.join('Paginas','Liturgias','Adicionar_Liturgia.py'),
+        os.path.join('Paginas','Liturgias','Editar_Liturgia.py'),
+    ],
     'Usuários': [
         os.path.join('Paginas','Usuarios','Home_Usuários.py'),
         os.path.join('Paginas','Usuarios','Adicionar_Usuários.py'),
