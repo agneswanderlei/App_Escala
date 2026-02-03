@@ -6,7 +6,9 @@ import requests
 from dotenv import load_dotenv
 import os
 from pathlib import Path
-
+# CRIAR NOVOS JOBS PARA ESTE PARTICIPANTE
+from datetime import datetime, timedelta
+from Paginas.Escalas.jobs import enviar_lembrete
 
 # Força o caminho absoluto para o .env na raiz
 env_path = Path(__file__).resolve().parents[2] / ".env"
@@ -199,16 +201,43 @@ with st.container(border=True):
         atualizar = st.button('Atualizar', key='success')
         if atualizar:
             # Instancia
-            instancia =session.query(Igrejas).get(igreja_id).instancia
+            instancia = session.query(Igrejas).get(igreja_id).instancia
+            scheduler = st.session_state.scheduler
+            
             try:
-                # 1. Apagar escalas antigas do evento
+                # 1. PEGAR PARTICIPANTES ANTIGOS DESTE MINISTÉRIO NO EVENTO
+                escalas_antigas = session.query(Escalas).filter_by(
+                    igreja_id=igreja_id,
+                    evento_id=evento,
+                    ministerio_id=ministerio  # ← FILTRAR APENAS ESTE MINISTÉRIO
+                ).all()
+                
+                # Pegar IDs dos participantes antigos
+                participantes_antigos_ids = [esc.participante_id for esc in escalas_antigas]
+                
+                # 2. REMOVER JOBS APENAS DOS PARTICIPANTES DESTE MINISTÉRIO
+                jobs_existentes = scheduler.get_jobs()
+                for job in jobs_existentes:
+                    # Verificar se o job é relacionado a este evento E a um participante deste ministério
+                    # job.args = [p_id, evento_id, ministerio_nome, funcao_nome, igreja_nome, link, tipo, instancia]
+                    if (len(job.args) > 1 and 
+                        job.args[1] == evento and  # mesmo evento
+                        job.args[0] in participantes_antigos_ids):  # participante do ministério sendo editado
+                        scheduler.remove_job(job.id)
+                
+                # 3. Apagar escalas antigas APENAS DESTE MINISTÉRIO
                 session.query(Escalas).filter_by(
                     igreja_id=igreja_id,
-                    evento_id=evento
+                    evento_id=evento,
+                    ministerio_id=ministerio  # ← FILTRAR APENAS ESTE MINISTÉRIO
                 ).delete()
 
-                # 2. Recriar escalas a partir do state
+                # 4. Recriar escalas a partir do state (APENAS DO MINISTÉRIO SELECIONADO)
                 for (p_id, f_id, m_id) in st.session_state.lista_participante_escala_funcao:
+                    # Só processar se for do ministério sendo editado
+                    if m_id != ministerio:
+                        continue
+                        
                     # Verificar indisponibilidade
                     indisp = session.query(Indisponibilidades).filter_by(
                         igreja_id=igreja_id,
@@ -224,11 +253,11 @@ with st.container(border=True):
                                     f"está indisponível em {evento_obj.data.strftime('%d/%m/%Y')} "
                                     f"das {ind.hora_inicio.strftime('%H:%M')} às {ind.hora_fim.strftime('%H:%M')}",
                                     icon='⚠️'
-
                                 )
                                 conflito = True
                     if conflito:
                         continue
+                        
                     nova = Escalas(
                         evento_id=evento,
                         ministerio_id=m_id,
@@ -237,18 +266,18 @@ with st.container(border=True):
                         igreja_id=igreja_id
                     )
                     session.add(nova)
+                    
                     # ENVIAR MENSAGENS
                     nome = session.query(Participantes).get(p_id).nome.upper()
                     evento_obj = session.query(Eventos).get(evento)
                     evento_nome = evento_obj.nome
                     evento_data = evento_obj.data.strftime('%d/%m/%Y')
                     evento_hora = evento_obj.hora.strftime('%H:%M') if evento_obj.hora else "Não especificada"
-                    ministerio_nome = session.query(Ministerios).get(ministerio).nome.upper()
+                    ministerio_nome = session.query(Ministerios).get(m_id).nome.upper()
                     funcao_nome = session.query(Funcoes).get(f_id).nome
                     igreja_nome = session.query(Igrejas).get(igreja_id).nome.upper()
 
                     responsavel_telefone = st.session_state.telefone
-
                     link_responsavel = f"https://api.whatsapp.com/send?phone={responsavel_telefone}"
 
                     texto = (
@@ -266,18 +295,48 @@ with st.container(border=True):
                         f"Qualquer dúvida, estamos à disposição 🙏\n"
                         f"Equipe {igreja_nome}"
                     )
+                    
                     resp = send_whatsapp_message(
-                        number=session.query(Participantes).get(p_id).telefone,
+                        number='55'+ session.query(Participantes).get(p_id).telefone,
                         text=texto,
                         instance_name=instancia
                     )
-                # 3. Atualizar descrição geral
+                    
+                    
+                    
+                    evento_datetime = datetime.combine(evento_obj.data, evento_obj.hora)
+
+                    # 2 dias antes
+                    scheduler.add_job(
+                        enviar_lembrete,
+                        'date',
+                        run_date=evento_datetime - timedelta(minutes=1),
+                        args=[p_id, evento_obj.id, ministerio_nome, funcao_nome, igreja_nome, link_responsavel, "2dias", instancia]
+                    )
+
+                    # 1 dia antes
+                    scheduler.add_job(
+                        enviar_lembrete,
+                        'date',
+                        run_date=evento_datetime - timedelta(minutes=2),
+                        args=[p_id, evento_obj.id, ministerio_nome, funcao_nome, igreja_nome, link_responsavel, "1dia", instancia]
+                    )
+
+                    # 2 horas antes
+                    scheduler.add_job(
+                        enviar_lembrete,
+                        'date',
+                        run_date=evento_datetime - timedelta(minutes=3),
+                        args=[p_id, evento_obj.id, ministerio_nome, funcao_nome, igreja_nome, link_responsavel, "2horas", instancia]
+                    )
+
+                # 5. Atualizar descrição geral
                 desc_obj = session.query(DescricaoEscala).filter_by(
                     igreja_id=igreja_id,
                     evento_id=evento,
                     ministerio_id=ministerio
                 ).first()
-                # 3.1 Condição para se já tiver atualizar se nao criar uma nova descrição
+                
                 if desc_obj:
                     desc_obj.descricao = descricao
                 else:
@@ -289,9 +348,10 @@ with st.container(border=True):
                     )
                     session.add(nova_desc)
 
-                # 4. Commit
+                # 6. Commit
                 session.commit()
                 st.toast('Escala atualizada com sucesso!', icon='✅')
+                st.rerun()
                 
             except Exception as e:
                 session.rollback()
@@ -303,5 +363,23 @@ with st.container(border=True):
             def msg_confirmacao():
                 ministerio_name = session.query(Ministerios).get(ministerio)
                 st.write(f'deseja excluir a escala: **{ministerio_name.nome}**')
+                with st.container(horizontal=True):
+                    if st.button('Confirmar', type='primary'):
+
+                        session.query(Escalas).filter_by(
+                            igreja_id=igreja_id,
+                            evento_id=evento,
+                            ministerio_id=ministerio
+                        ).delete()
+                        session.query(DescricaoEscala).filter_by(
+                            igreja_id=igreja_id,
+                            evento_id=evento,
+                            ministerio_id=ministerio
+                        ).delete()
+                        session.commit()
+                    if st.button('Cancelar'):
+                        st.rerun()
+                
 
             msg_confirmacao()
+session.close()

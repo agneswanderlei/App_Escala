@@ -205,6 +205,8 @@ with st.container(border=True):
                     text=texto,
                     instance_name=instancia
                 )
+                if instancia:
+                    st.toast(f'Mensagem enviada para **{session.query(Participantes).get(p_id).nome}**', icon='✅')
                 
                 from datetime import datetime, timedelta
 
