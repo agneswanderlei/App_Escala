@@ -184,7 +184,7 @@ with st.container(border=True):
 
                 responsavel_telefone = st.session_state.telefone
 
-                link_responsavel = f"https://api.whatsapp.com/send?phone={responsavel_telefone}"
+                link_responsavel = f"https://api.whatsapp.com/send?phone=55{responsavel_telefone}"
 
                 texto = (
                     f"📣 Olá {nome}!\n\n"
