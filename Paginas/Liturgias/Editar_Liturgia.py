@@ -5,7 +5,8 @@ import datetime
 
 st.set_page_config(layout='centered')
 session = SessionLocal()
-
+if 'momentos_state_edite' not in st.session_state:
+    st.session_state.momentos_state_edite = {}
 with open('styles.css') as f:
     st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 def carregar_momentos():

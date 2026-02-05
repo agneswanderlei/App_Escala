@@ -1,6 +1,6 @@
 import streamlit as st
 from db import SessionLocal
-from models import Eventos, Escalas, DescricaoEscala
+from models import Eventos, Escalas, DescricaoEscala, Liturgias, MomentosLiturgia
 import pandas as pd
 import datetime
 from streamlit_calendar import calendar
@@ -103,10 +103,11 @@ if calendar_response and "eventClick" in calendar_response:
     evento_id = evento['extendedProps']['id']
     escala_evento = session.query(Escalas).filter_by(evento_id=evento_id).all()
     descricao_escala = session.query(DescricaoEscala).filter_by(evento_id=evento_id).all()
+    liturgia_evento = session.query(Liturgias).filter_by(evento_id=evento_id).all()
     # Abrir modal com @dialog
     @st.dialog("Detalhes do Evento", width='medium')
     def mostrar_detalhes():
-        detalhes(evento=evento, escalas=escala_evento, descricao=descricao_escala) 
+        detalhes(evento=evento, escalas=escala_evento, liturgia=liturgia_evento) 
     
     mostrar_detalhes()
 

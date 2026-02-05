@@ -23,6 +23,7 @@ with st.container(border=True):
     nome = st.text_input("Nome completo")
     cpf = st.text_input("Usuário", placeholder='Digite seu CPF')
     perfil = st.selectbox('Perfil',options=['Administrador','Líder','Auxiliar'],index=None)
+    ministerios_escolhidos = []
     if perfil == 'Líder':
         ministerios = session.query(Ministerios).filter_by(igreja_id=igreja_id).all()
         ministerios_escolhidos = st.multiselect(

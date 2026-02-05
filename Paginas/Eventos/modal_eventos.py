@@ -1,12 +1,12 @@
 import streamlit as st
 from db import SessionLocal
-from models import DescricaoEscala
+from models import DescricaoEscala, MomentosLiturgia
 from collections import defaultdict
 
 session = SessionLocal()
 
-def detalhes(evento, escalas, descricao):
-    tab1, tab2 = st.tabs(['Geral', 'Escala'])
+def detalhes(evento, escalas, liturgia):
+    tab1, tab2, tab3 = st.tabs(['Geral', 'Escala', 'Liturgia'])
     
     with tab1:
         st.write(f"**Igreja:** {evento['extendedProps'].get('igreja', '-')}")
@@ -39,3 +39,24 @@ def detalhes(evento, escalas, descricao):
 
                     if desc:
                         st.write(f"**Descrição:** {desc.descricao}")
+    with tab3:
+        if not liturgia:
+            st.info('Nenhuma liturgia cadastrada!')
+        else:
+            for lit in liturgia:
+                with st.expander(f'**{lit.nome}**'):
+                    # Agrupar momentos por (hora, descricao)
+                    momentos_agrupados = defaultdict(list)
+                    for mom in lit.momentos:
+                        chave = (mom.horario.strftime("%H:%M"), mom.descricao)
+                        momentos_agrupados[chave].append(mom.responsavel.nome if mom.responsavel else "-")
+
+                    # Exibir cada grupo uma vez
+                    for (hora, descricao), responsaveis in sorted(momentos_agrupados.items()):
+                        st.write(f"**{hora} - {descricao}**")
+                        for r in responsaveis:
+                            st.write(f"* {r}")
+                    if lit.descricao:
+                        st.write(f"**Descrição:** {lit.descricao}")
+
+
