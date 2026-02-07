@@ -1,7 +1,7 @@
 import streamlit as st
 from db import SessionLocal
 from models import Eventos, Participantes, Liturgias, MomentosLiturgia
-import pandas as pd
+import os, time
 
 st.set_page_config(layout='centered')
 session = SessionLocal()
@@ -44,7 +44,10 @@ with st.container(border=True):
         if participante:
             st.session_state.momentos_state[hora] = (descricao, participante)
     if deletar:
-        del st.session_state.momentos_state[hora]
+        if hora in st.session_state.momentos_state.keys():
+            del st.session_state.momentos_state[hora]
+        else:
+            st.warning('Selecione a hora correta do momento da liturgia.')
     dados = [{
         "Hora": h.strftime("%H:%M"),
         "Descrição": desc,
@@ -54,24 +57,32 @@ with st.container(border=True):
         ) if resp else "-"
     } for h, (desc, resp) in sorted(st.session_state.momentos_state.items())]
     st.dataframe(dados)
+    observacao = st.text_area('Observação')
     salvar = st.button('Salvar', key='primary')
     if salvar:
-        nova_liturgia = Liturgias(
-            nome=nome,
-            igreja_id=igreja_id,
-            evento_id=evento
-        )
-        session.add(nova_liturgia)
-        session.commit()
-        for hora, (desc, responsaveis) in st.session_state.momentos_state.items():
-            for pid in responsaveis:
-            
-                momento = MomentosLiturgia(
-                    horario = hora,
-                    descricao = desc,
-                    responsavel_id = pid,
-                    liturgia_id = nova_liturgia.id
-                )
-                session.add(momento)
-        session.commit()
-        st.success('Liturgia salva com sucesso!')
+        try:
+            nova_liturgia = Liturgias(
+                nome=nome,
+                igreja_id=igreja_id,
+                evento_id=evento,
+                descricao=observacao
+            )
+            session.add(nova_liturgia)
+            session.commit()
+            for hora, (desc, responsaveis) in st.session_state.momentos_state.items():
+                for pid in responsaveis:
+                
+                    momento = MomentosLiturgia(
+                        horario = hora,
+                        descricao = desc,
+                        responsavel_id = pid,
+                        liturgia_id = nova_liturgia.id
+                    )
+                    session.add(momento)
+            session.commit()
+            st.success('Liturgia salva com sucesso!')
+            time.sleep(2)
+            st.switch_page(os.path.join('Paginas','Eventos','Eventos.py'))
+        except Exception as e:
+            session.rollback()
+            st.warning(f'Não foi possível cadastrar liturgia: {e}')

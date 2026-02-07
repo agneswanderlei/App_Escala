@@ -33,12 +33,15 @@ def detalhes(evento, escalas, liturgia):
                         ministerio_id=primeira_escala.ministerio_id,
                         evento_id=primeira_escala.evento_id
                     ).first()
-                    # Listar todos os participantes deste ministério
-                    for esc in escalas_ministerio:
-                        st.write(f"**{esc.funcao.nome}:** {esc.participante.nome if hasattr(esc, 'participante') else '-'}")
-
+                    st.write("**Participantes:**")
+                    with st.container(border=True):
+                        # Listar todos os participantes deste ministério
+                        for esc in escalas_ministerio:
+                            st.write(f"**{esc.funcao.nome}:** {esc.participante.nome if hasattr(esc, 'participante') else '-'}")
                     if desc:
-                        st.write(f"**Descrição:** {desc.descricao}")
+                        st.write("**Descrição:**")
+                        with st.container(border=True):
+                            st.markdown(desc.descricao)
     with tab3:
         if not liturgia:
             st.info('Nenhuma liturgia cadastrada!')
@@ -53,9 +56,10 @@ def detalhes(evento, escalas, liturgia):
 
                     # Exibir cada grupo uma vez
                     for (hora, descricao), responsaveis in sorted(momentos_agrupados.items()):
-                        st.write(f"**{hora} - {descricao}**")
-                        for r in responsaveis:
-                            st.write(f"* {r}")
+                        with st.container(border=True):
+                            st.write(f"**{hora} - {descricao}**")
+                            for r in responsaveis:
+                                st.write(f"* {r}")
                     if lit.descricao:
                         st.write(f"**Descrição:** {lit.descricao}")
 

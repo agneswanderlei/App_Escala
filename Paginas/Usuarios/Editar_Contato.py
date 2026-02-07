@@ -46,7 +46,7 @@ if usuario:
     with st.form("form_senha"):
         nome = st.text_input("Nome completo", disabled=True, value=usuario.nome)
         username = st.text_input("Usuário (CPF)", disabled=True, value=usuario.cpf)
-        telefone = st.text_input("Telefone", value=usuario.telefone)
+        telefone = st.text_input("Telefone", value=usuario.telefone, max_chars=11)
         
 
         enviar = st.form_submit_button("Atualizar Telefone", key='warning')

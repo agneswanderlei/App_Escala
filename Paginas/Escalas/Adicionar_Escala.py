@@ -4,9 +4,10 @@ from models import Eventos, Ministerios, Participantes, Indisponibilidades, Esca
 import pandas as pd
 from Paginas.Escalas.jobs import enviar_lembrete
 from Paginas.Escalas.Enviar_mensagens import send_whatsapp_message
+from datetime import datetime, timedelta
 # --- Adicionando o diretório pai ao path de busca ---
 import sys
-import os
+import os, time
 print("PATH:", sys.path)
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 st.set_page_config(layout='centered')
@@ -172,74 +173,75 @@ with st.container(border=True):
 
                 )
                 session.add(nova_escala)
-                # Textos
-                nome = session.query(Participantes).get(p_id).nome.upper()
-                evento_obj = session.query(Eventos).get(evento)
-                evento_nome = evento_obj.nome
-                evento_data = evento_obj.data.strftime('%d/%m/%Y')
-                evento_hora = evento_obj.hora.strftime('%H:%M') if evento_obj.hora else "Não especificada"
-                ministerio_nome = session.query(Ministerios).get(ministerio).nome.upper()
-                funcao_nome = session.query(Funcoes).get(f_id).nome
-                igreja_nome = session.query(Igrejas).get(igreja_id).nome.upper()
-
-                responsavel_telefone = st.session_state.telefone
-
-                link_responsavel = f"https://api.whatsapp.com/send?phone=55{responsavel_telefone}"
-
-                texto = (
-                    f"📣 Olá {nome}!\n\n"
-                    f"Você foi escalado para o evento abaixo 🎉\n\n"
-                    f"🏛️ *Igreja:* {igreja_nome}\n"
-                    f"🗓️ *Evento:* {evento_nome}\n"
-                    f"📅 *Data:* {evento_data}\n"
-                    f"⏰ *Horário:* {evento_hora}\n"
-                    f"🙌 *Ministério:* {ministerio_nome}\n"
-                    f"👤 *Função:* {funcao_nome}\n\n"
-                    f"⚠️ Caso não possa comparecer, fale diretamente com o responsável clicando no link abaixo:\n"
-                    f"{link_responsavel}\n\n"
-                    f"Qualquer dúvida, estamos à disposição 🙏\n"
-                    f"Equipe {igreja_nome}"
-                )
-                resp = send_whatsapp_message(
-                    number='55'+ session.query(Participantes).get(p_id).telefone,
-                    text=texto,
-                    instance_name=instancia
-                )
                 if instancia:
+                    # Textos
+                    nome = session.query(Participantes).get(p_id).nome.upper()
+                    evento_obj = session.query(Eventos).get(evento)
+                    evento_nome = evento_obj.nome
+                    evento_data = evento_obj.data.strftime('%d/%m/%Y')
+                    evento_hora = evento_obj.hora.strftime('%H:%M') if evento_obj.hora else "Não especificada"
+                    ministerio_nome = session.query(Ministerios).get(ministerio).nome.upper()
+                    funcao_nome = session.query(Funcoes).get(f_id).nome
+                    igreja_nome = session.query(Igrejas).get(igreja_id).nome.upper()
+
+                    responsavel_telefone = st.session_state.telefone
+
+                    link_responsavel = f"https://api.whatsapp.com/send?phone=55{responsavel_telefone}"
+
+                    texto = (
+                        f"📣 Olá {nome}!\n\n"
+                        f"Você foi escalado para o evento abaixo 🎉\n\n"
+                        f"🏛️ *Igreja:* {igreja_nome}\n"
+                        f"🗓️ *Evento:* {evento_nome}\n"
+                        f"📅 *Data:* {evento_data}\n"
+                        f"⏰ *Horário:* {evento_hora}\n"
+                        f"🙌 *Ministério:* {ministerio_nome}\n"
+                        f"👤 *Função:* {funcao_nome}\n\n"
+                        f"⚠️ Caso não possa comparecer, fale diretamente com o responsável clicando no link abaixo:\n"
+                        f"{link_responsavel}\n\n"
+                        f"Qualquer dúvida, estamos à disposição 🙏\n"
+                        f"Equipe {igreja_nome}"
+                    )
+                    resp = send_whatsapp_message(
+                        number='55'+ session.query(Participantes).get(p_id).telefone,
+                        text=texto,
+                        instance_name=instancia
+                    )
                     st.toast(f'Mensagem enviada para **{session.query(Participantes).get(p_id).nome}**', icon='✅')
                 
-                from datetime import datetime, timedelta
 
-                evento_datetime = datetime.combine(evento_obj.data, evento_obj.hora)
+                    evento_datetime = datetime.combine(evento_obj.data, evento_obj.hora)
 
-                # 2 dias antes
-                scheduler.add_job(
-                    enviar_lembrete,
-                    'date',
-                    run_date=evento_datetime - timedelta(minutes=1),
-                    args=[p_id, evento_obj.id, ministerio_nome, funcao_nome, igreja_nome, link_responsavel, "2dias", instancia]
-                )
+                    # 2 dias antes
+                    scheduler.add_job(
+                        enviar_lembrete,
+                        'date',
+                        run_date=evento_datetime - timedelta(minutes=1),
+                        args=[p_id, evento_obj.id, ministerio_nome, funcao_nome, igreja_nome, link_responsavel, "2dias", instancia]
+                    )
 
-                # 1 dia antes
-                scheduler.add_job(
-                    enviar_lembrete,
-                    'date',
-                    run_date=evento_datetime - timedelta(minutes=2),
-                    args=[p_id, evento_obj.id, ministerio_nome, funcao_nome, igreja_nome, link_responsavel, "1dia", instancia]
-                )
+                    # 1 dia antes
+                    scheduler.add_job(
+                        enviar_lembrete,
+                        'date',
+                        run_date=evento_datetime - timedelta(minutes=2),
+                        args=[p_id, evento_obj.id, ministerio_nome, funcao_nome, igreja_nome, link_responsavel, "1dia", instancia]
+                    )
 
-                # 2 horas antes
-                scheduler.add_job(
-                    enviar_lembrete,
-                    'date',
-                    run_date=evento_datetime - timedelta(minutes=3),
-                    args=[p_id, evento_obj.id, ministerio_nome, funcao_nome, igreja_nome, link_responsavel, "2horas", instancia]
-                )
+                    # 2 horas antes
+                    scheduler.add_job(
+                        enviar_lembrete,
+                        'date',
+                        run_date=evento_datetime - timedelta(minutes=3),
+                        args=[p_id, evento_obj.id, ministerio_nome, funcao_nome, igreja_nome, link_responsavel, "2horas", instancia]
+                    )
 
             session.commit()
             
             st.success("Escala cadastrada com sucesso!")
+            time.sleep(2)
             del st.session_state.lista_participante_funcao
+            st.switch_page(os.path.join('Paginas','Eventos','Eventos.py'))
         except Exception as e:
             session.rollback()
             st.error(f"Erro ao cadastrar Escala: {e}")

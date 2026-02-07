@@ -1,8 +1,7 @@
 import streamlit as st
 from db import SessionLocal
 from models import Participantes, Indisponibilidades, Igrejas
-import datetime
-
+import os, time
 st.set_page_config(layout='centered')
 session = SessionLocal()
 
@@ -24,7 +23,7 @@ if not participantes:
 else:
     opcoes_participantes = [f"{p.id} - {p.nome}" for p in participantes]
 
-    with st.form("form_indisponibilidade", clear_on_submit=True):
+    with st.container(border=True):
         if perfil in ["Supervisor", "Administrador"]:
             escolha = st.selectbox("Selecione o participante:", options=opcoes_participantes, index=None)
         else:
@@ -35,9 +34,13 @@ else:
         data = st.date_input("Data da indisponibilidade", value=None, format="DD/MM/YYYY")
         hora_inicio = st.time_input("Hora início", value=None)
         hora_fim = st.time_input("Hora fim", value=None)
+        if hora_inicio and hora_fim:
+            if hora_fim < hora_inicio:
+                st.warning('A hora deve ser maior que a hora inicial')
+                st.stop()
         motivo = st.text_area("Motivo", placeholder="Ex: viagem, trabalho, saúde...")
 
-        salvar = st.form_submit_button("Cadastrar", type="primary")
+        salvar = st.button("Cadastrar", type="primary")
 
         if salvar:
             try:
@@ -56,6 +59,8 @@ else:
                 session.commit()
 
                 st.success(f"Indisponibilidade cadastrada para {escolha} em {data.strftime('%d/%m/%Y')}")
+                time.sleep(2)
+                st.switch_page(os.path.join('Paginas','Indisponibilidade','Indisponibilidades.py'))
             except Exception as e:
                 session.rollback()
                 st.error(f"Erro ao cadastrar indisponibilidade: {e}")

@@ -1,7 +1,7 @@
 import streamlit as st
 from db import SessionLocal
 from models import Eventos, Escalas
-import time
+import time, os
 from datetime import datetime, timedelta
 from Paginas.Escalas.jobs import enviar_lembrete
 from models import Igrejas
@@ -76,43 +76,49 @@ with st.form("form_cadastro", clear_on_submit=True):
                 # 3. Recriar jobs com nova data/hora
                 evento_datetime = datetime.combine(data, hora)
                 
-                for esc in escalas:
-                    p_id = esc.participante_id
-                    ministerio_nome = esc.ministerio.nome.upper()
-                    funcao_nome = esc.funcao.nome
-                    igreja_nome = session.query(Igrejas).get(igreja_id).nome.upper()
-                    responsavel_telefone = st.session_state.telefone
-                    link_responsavel = f"https://api.whatsapp.com/send?phone={responsavel_telefone}"
-                    instancia = session.query(Igrejas).get(igreja_id).instancia
-                    
-                    # 2 dias antes
-                    scheduler.add_job(
-                        enviar_lembrete,
-                        'date',
-                        run_date=evento_datetime - timedelta(minutes=2),
-                        args=[p_id, evento_selecionado, ministerio_nome, funcao_nome, igreja_nome, link_responsavel, "2dias", instancia]
-                    )
+                igreja_nome = session.query(Igrejas).get(igreja_id).nome.upper()
+                responsavel_telefone = st.session_state.telefone
+                link_responsavel = f"https://api.whatsapp.com/send?phone={responsavel_telefone}"
+                instancia = session.query(Igrejas).get(igreja_id).instancia
+                if instancia:
+                    for esc in escalas:
+                        p_id = esc.participante_id
+                        ministerio_nome = esc.ministerio.nome.upper()
+                        funcao_nome = esc.funcao.nome
+                        # 2 dias antes
+                        scheduler.add_job(
+                            enviar_lembrete,
+                            'date',
+                            run_date=evento_datetime - timedelta(minutes=2),
+                            args=[p_id, evento_selecionado, ministerio_nome, funcao_nome, igreja_nome, link_responsavel, "2dias", instancia]
+                        )
 
-                    # 1 dia antes
-                    scheduler.add_job(
-                        enviar_lembrete,
-                        'date',
-                        run_date=evento_datetime - timedelta(minutes=1),
-                        args=[p_id, evento_selecionado, ministerio_nome, funcao_nome, igreja_nome, link_responsavel, "1dia", instancia]
-                    )
+                        # 1 dia antes
+                        scheduler.add_job(
+                            enviar_lembrete,
+                            'date',
+                            run_date=evento_datetime - timedelta(minutes=1),
+                            args=[p_id, evento_selecionado, ministerio_nome, funcao_nome, igreja_nome, link_responsavel, "1dia", instancia]
+                        )
 
-                    # 2 horas antes
-                    scheduler.add_job(
-                        enviar_lembrete,
-                        'date',
-                        run_date=evento_datetime - timedelta(minutes=2),
-                        args=[p_id, evento_selecionado, ministerio_nome, funcao_nome, igreja_nome, link_responsavel, "2horas", instancia]
-                    )
-                
-                st.success(f"Evento '{eventos.nome}' atualizado com sucesso! Jobs reagendados.")
+                        # 2 horas antes
+                        scheduler.add_job(
+                            enviar_lembrete,
+                            'date',
+                            run_date=evento_datetime - timedelta(minutes=2),
+                            args=[p_id, evento_selecionado, ministerio_nome, funcao_nome, igreja_nome, link_responsavel, "2horas", instancia]
+                        )
+                    st.success(f"Evento '{eventos.nome}' atualizado com sucesso! Jobs reagendados.")
+                    time.sleep(2)
+                    st.switch_page(os.path.join('Paginas','Eventos','Eventos.py'))
+                else:
+                    st.success(f"Evento '{eventos.nome}' atualizado com sucesso!")
+                    time.sleep(2)
+                    st.switch_page(os.path.join('Paginas','Eventos','Eventos.py'))
             else:
                 st.success(f"Evento '{eventos.nome}' atualizado com sucesso!")
-                
+                time.sleep(2)
+                st.switch_page(os.path.join('Paginas','Eventos','Eventos.py'))
         except Exception as e:
             session.rollback()
             st.error(f"Erro ao atualizar Evento: {e}")
@@ -146,7 +152,7 @@ with st.form("form_cadastro", clear_on_submit=True):
                         session.commit()
                         st.success(f"Evento '{eventos.nome}' excluído com sucesso!")
                         time.sleep(2)
-                        st.rerun()
+                        st.switch_page(os.path.join('Paginas','Eventos','Eventos.py'))
                     except Exception as e:
                         session.rollback()
                         st.error(f"Erro ao excluir evento: {e}")

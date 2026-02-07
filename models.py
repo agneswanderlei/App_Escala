@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Table, Date, Time
+from sqlalchemy import Column, Integer, String, ForeignKey, Table, Date, Time, Text
 from sqlalchemy.orm import relationship, declarative_base
 
 Base = declarative_base()
@@ -29,7 +29,7 @@ class Funcoes(Base):
     __tablename__ = "funcoes"
     id = Column(Integer, primary_key=True, autoincrement=True)
     nome = Column(String, nullable=False)
-    descricao = Column(String, nullable=True)
+    descricao = Column(Text, nullable=True)
     igreja_id = Column(Integer, ForeignKey("igrejas.id"), nullable=False)
 
     participantes = relationship("Participantes", secondary=participante_funcao, back_populates="funcoes")
@@ -73,7 +73,7 @@ class Indisponibilidades(Base):
     data = Column(Date, nullable=False)
     hora_inicio = Column(Time, nullable=True)
     hora_fim = Column(Time, nullable=True)
-    motivo = Column(String, nullable=True)
+    motivo = Column(Text, nullable=True)
     igreja_id = Column(Integer, ForeignKey("igrejas.id"), nullable=False)
 
     participante = relationship("Participantes", back_populates="indisponibilidades")
@@ -111,18 +111,18 @@ class Eventos(Base):
     nome = Column(String, nullable=False)
     data = Column(Date, nullable=False)
     hora = Column(Time, nullable=True)
-    descricao = Column(String, nullable=True)
+    descricao = Column(Text, nullable=True)
     igreja_id = Column(Integer, ForeignKey("igrejas.id"), nullable=False)
 
     igreja = relationship("Igrejas", back_populates="eventos")
-    escalas = relationship("Escalas", back_populates="evento")
-    liturgias = relationship("Liturgias", back_populates="evento")
+    escalas = relationship("Escalas", back_populates="evento", cascade="all, delete-orphan", passive_deletes=True)
+    liturgias = relationship("Liturgias", back_populates="evento", cascade="all, delete-orphan", passive_deletes=True)
 
 class Escalas(Base):
 
     __tablename__ = "escalas"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    evento_id = Column(Integer, ForeignKey("eventos.id"))
+    evento_id = Column(Integer, ForeignKey("eventos.id", ondelete="CASCADE"))
     ministerio_id = Column(Integer, ForeignKey("ministerios.id"))
     participante_id = Column(Integer, ForeignKey("participantes.id"))
     funcao_id = Column(Integer, ForeignKey("funcoes.id"))  # referência à tabela Funcoes
@@ -137,12 +137,12 @@ class Escalas(Base):
 class DescricaoEscala(Base):
     __tablename__ = "descricao_escala"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    evento_id = Column(Integer, ForeignKey("eventos.id"))
+    evento_id = Column(Integer, ForeignKey("eventos.id", ondelete="CASCADE"))
     ministerio_id = Column(Integer, ForeignKey("ministerios.id"))
     igreja_id = Column(Integer, ForeignKey("igrejas.id"))
-    descricao = Column(String, nullable=True)
+    descricao = Column(Text, nullable=True)
 
-    evento = relationship("Eventos")
+    evento = relationship("Eventos",passive_deletes=True)
     ministerio = relationship("Ministerios")
     igreja = relationship("Igrejas")
 
@@ -152,11 +152,11 @@ class Liturgias(Base):
     nome = Column(String, nullable=False)
     descricao = Column(String, nullable=True)
     igreja_id = Column(Integer, ForeignKey("igrejas.id"), nullable=False)
-    evento_id = Column(Integer, ForeignKey("eventos.id"), nullable=False)
+    evento_id = Column(Integer, ForeignKey("eventos.id", ondelete="CASCADE"), nullable=False)
 
     igreja = relationship("Igrejas", back_populates="liturgias")
     evento = relationship("Eventos", back_populates="liturgias")
-    momentos = relationship("MomentosLiturgia", back_populates="liturgia", cascade="all, delete-orphan")
+    momentos = relationship("MomentosLiturgia", back_populates="liturgia", cascade="all, delete-orphan", passive_deletes=True)
 
 class MomentosLiturgia(Base):
     __tablename__ = "momentos_liturgia"
@@ -165,6 +165,6 @@ class MomentosLiturgia(Base):
     descricao = Column(String, nullable=False)  # Ex: "Louvor"
     responsavel_id = Column(Integer, ForeignKey("participantes.id"), nullable=True)  # quem conduz
 
-    liturgia_id = Column(Integer, ForeignKey("liturgias.id"), nullable=False)
+    liturgia_id = Column(Integer, ForeignKey("liturgias.id", ondelete="CASCADE"), nullable=False)
     liturgia = relationship("Liturgias", back_populates="momentos")
     responsavel = relationship("Participantes")  # participante responsável

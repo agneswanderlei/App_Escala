@@ -2,6 +2,7 @@ import streamlit as st
 from db import SessionLocal
 from models import Participantes, Ministerios, Funcoes
 import time
+import os
 
 st.set_page_config(layout='centered')
 with open('styles.css') as f:
@@ -81,6 +82,8 @@ else:
 
                 session.commit()
                 st.success("Participante atualizado com sucesso!")
+                time.sleep(2)
+                st.switch_page(os.path.join('Paginas','Participantes','Participantes.py'))
             except Exception as e:
                 session.rollback()
                 st.error(f"Erro ao atualizar participante: {e}")
@@ -99,7 +102,7 @@ else:
                             session.commit()
                             st.success(f"Participante '{participante_selecionado.nome}' excluído com sucesso!")
                             time.sleep(2)
-                            st.rerun()
+                            st.switch_page(os.path.join('Paginas','Participantes','Participantes.py'))
                         except Exception as e:
                             session.rollback()
                             st.error(f"Erro ao excluir participante: {e}")

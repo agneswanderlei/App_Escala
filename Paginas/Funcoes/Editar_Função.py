@@ -26,7 +26,7 @@ else:
 
     funcao_selecionada = session.query(Funcoes).get(id_selecionado)
 
-    with st.form("form_editar"):
+    with st.form("form_editar", clear_on_submit=True):
         novo_nome = st.text_input("Novo nome da função", value=funcao_selecionada.nome)
         novo_descricao = st.text_area('Nova descrição', value=funcao_selecionada.descricao)
         with st.container(horizontal=True, vertical_alignment='bottom'):

@@ -1,6 +1,8 @@
 import streamlit as st
 from db import SessionLocal
 from models import Participantes, Usuarios, Ministerios, Funcoes
+import os
+import time
 
 st.set_page_config(layout='centered')
 session = SessionLocal()
@@ -21,7 +23,7 @@ with st.container(border=True):
     if escolha == "Convidado":
         nome_extra = st.text_input("Nome do convidado")
 
-    telefone = st.text_input("Telefone")
+    telefone = st.text_input("Telefone", max_chars=11)
 
     # Seleção de ministérios e funções
     ministerios_escolhidos = st.multiselect(
@@ -74,6 +76,8 @@ with st.container(border=True):
             session.commit()
 
             st.success(f"Participante '{novo_participante.nome}' cadastrado com sucesso!")
+            time.sleep(2)
+            st.switch_page(os.path.join('Paginas','Participantes','Participantes.py'))
         except Exception as e:
             session.rollback()
             st.error(f"Erro ao cadastrar Participante: {e}")

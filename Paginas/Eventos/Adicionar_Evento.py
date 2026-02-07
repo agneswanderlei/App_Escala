@@ -1,7 +1,7 @@
 import streamlit as st
 from db import SessionLocal
 from models import Eventos
-
+import os, time
 st.set_page_config(layout='centered')
 session = SessionLocal()
 
@@ -32,6 +32,8 @@ with st.form("form_cadastro", clear_on_submit=True):
             session.commit()
 
             st.success(f"Evento '{novo_evento.nome}' cadastrado com sucesso!")
+            time.sleep(2)
+            st.switch_page(os.path.join('Paginas','Eventos','Eventos.py'))
         except Exception as e:
             session.rollback()
             st.error(f"Erro ao cadastrar Evento: {e}")

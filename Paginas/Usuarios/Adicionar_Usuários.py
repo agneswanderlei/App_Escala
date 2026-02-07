@@ -31,7 +31,7 @@ with st.container(border=True):
             options=[m.id for m in ministerios],
             format_func=lambda x: next(m.nome for m in ministerios if m.id == x)
         )
-    telefone = st.text_input("Nº do telefone", placeholder='Apenas números! Ex. 81988887777',help='Não precisa colocar parênteses e nem traços ex: (81) 98888-7777')
+    telefone = st.text_input("Nº do telefone", placeholder='Apenas números! Ex. 81988887777',help='Não precisa colocar parênteses e nem traços ex: (81) 98888-7777', max_chars=11)
     senha = st.text_input("Senha", type="password")
     confirmar = st.text_input("Confirmar senha", type="password")
     enviar = st.button("Cadastrar", key='success')
@@ -41,6 +41,8 @@ with st.container(border=True):
             st.warning("🔁 As senhas não coincidem.")
         elif not nome or not cpf or not senha:
             st.warning("📌 Todos os campos são obrigatórios.")
+        elif perfil in ['Líder', 'Administrador'] and not telefone:
+            st.warning('Para líderes e administradores é necessário nº de telefone')
         else:
             try:
                 senha_hash = stauth.Hasher.hash(senha)

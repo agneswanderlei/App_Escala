@@ -26,7 +26,7 @@ else:
 
     grupo_selecionado = session.query(Ministerios).get(id_selecionado)
 
-    with st.form("form_editar"):
+    with st.form("form_editar", clear_on_submit=True):
         novo_nome = st.text_input("Novo nome do grupo/ministério", value=grupo_selecionado.nome)
         with st.container(horizontal=True, vertical_alignment='bottom'):
             salvar = st.form_submit_button("Salvar alterações", key='primary')
