@@ -4,7 +4,7 @@ from models import Eventos, Ministerios, Participantes, Escalas, Funcoes, partic
 import pandas as pd
 import requests
 from dotenv import load_dotenv
-import os
+import os, time
 from pathlib import Path
 # CRIAR NOVOS JOBS PARA ESTE PARTICIPANTE
 from datetime import datetime, timedelta
@@ -308,7 +308,7 @@ with st.container(border=True):
                         scheduler.add_job(
                             enviar_lembrete,
                             'date',
-                            run_date=evento_datetime - timedelta(minutes=1),
+                            run_date=evento_datetime - timedelta(days=2),
                             args=[p_id, evento_obj.id, ministerio_nome, funcao_nome, igreja_nome, link_responsavel, "2dias", instancia]
                         )
 
@@ -316,7 +316,7 @@ with st.container(border=True):
                         scheduler.add_job(
                             enviar_lembrete,
                             'date',
-                            run_date=evento_datetime - timedelta(minutes=2),
+                            run_date=evento_datetime - timedelta(days=1),
                             args=[p_id, evento_obj.id, ministerio_nome, funcao_nome, igreja_nome, link_responsavel, "1dia", instancia]
                         )
 
@@ -324,9 +324,12 @@ with st.container(border=True):
                         scheduler.add_job(
                             enviar_lembrete,
                             'date',
-                            run_date=evento_datetime - timedelta(minutes=3),
+                            run_date=evento_datetime - timedelta(hours=2),
                             args=[p_id, evento_obj.id, ministerio_nome, funcao_nome, igreja_nome, link_responsavel, "2horas", instancia]
                         )
+                        st.toast('Escala atualizada com sucesso!', icon='✅')
+                        time.sleep(2)
+                        # st.switch_page(os.path.join('Paginas','Eventos','Eventos.py'))
 
                 # 5. Atualizar descrição geral
                 desc_obj = session.query(DescricaoEscala).filter_by(
@@ -348,6 +351,7 @@ with st.container(border=True):
 
                 # 6. Commit
                 session.commit()
+                del st.session_state.lista_participante_escala_funcao
                 st.toast('Escala atualizada com sucesso!', icon='✅')
                 
             except Exception as e:
@@ -374,6 +378,10 @@ with st.container(border=True):
                             ministerio_id=ministerio
                         ).delete()
                         session.commit()
+                        st.success("Escala cadastrada com sucesso!")
+                        time.sleep(2)
+                        del st.session_state.lista_participante_escala_funcao
+                        st.switch_page(os.path.join('Paginas','Eventos','Eventos.py'))
                     if st.button('Cancelar'):
                         st.rerun()
                 

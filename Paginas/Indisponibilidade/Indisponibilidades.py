@@ -9,14 +9,14 @@ st.title("📅 Lista de Indisponibilidades")
 
 igreja_id = st.session_state.get("igreja")
 perfil = st.session_state.get('perfil')
-
+participante_id = st.session_state.get('user_id')
 # --- Buscar participantes conforme perfil ---
 if perfil == 'Supervisor':
     st.session_state.indisponibilidade = session.query(Indisponibilidades).all()
 elif perfil == 'Administrador':
     st.session_state.indisponibilidade = session.query(Indisponibilidades).filter_by(igreja_id=igreja_id).all()
 else:
-    st.session_state.indisponibilidade = session.query(Indisponibilidades).filter_by(usuario_id=st.session_state.get('user_id')).all()
+    st.session_state.indisponibilidade = session.query(Indisponibilidades).filter_by(participante_id=participante_id).all()
 
 if not st.session_state.indisponibilidade:
     st.warning("Nenhuma indisponibilidade cadastrada ainda.")

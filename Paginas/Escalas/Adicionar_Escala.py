@@ -216,7 +216,7 @@ with st.container(border=True):
                     scheduler.add_job(
                         enviar_lembrete,
                         'date',
-                        run_date=evento_datetime - timedelta(minutes=1),
+                        run_date=evento_datetime - timedelta(days=2),
                         args=[p_id, evento_obj.id, ministerio_nome, funcao_nome, igreja_nome, link_responsavel, "2dias", instancia]
                     )
 
@@ -224,7 +224,7 @@ with st.container(border=True):
                     scheduler.add_job(
                         enviar_lembrete,
                         'date',
-                        run_date=evento_datetime - timedelta(minutes=2),
+                        run_date=evento_datetime - timedelta(days=1),
                         args=[p_id, evento_obj.id, ministerio_nome, funcao_nome, igreja_nome, link_responsavel, "1dia", instancia]
                     )
 
@@ -232,7 +232,7 @@ with st.container(border=True):
                     scheduler.add_job(
                         enviar_lembrete,
                         'date',
-                        run_date=evento_datetime - timedelta(minutes=3),
+                        run_date=evento_datetime - timedelta(hours=2),
                         args=[p_id, evento_obj.id, ministerio_nome, funcao_nome, igreja_nome, link_responsavel, "2horas", instancia]
                     )
 

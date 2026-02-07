@@ -8,7 +8,7 @@ from Paginas.Eventos.modal_eventos import detalhes
 st.set_page_config(layout='centered', page_icon='sarca2.png')
 session = SessionLocal()
 
-st.title("📋 Visualizar Eventos")
+st.title("📋 Minhas Escalas")
 
 igreja_id = st.session_state.get("igreja")
 perfil = st.session_state.get("perfil")
@@ -23,6 +23,17 @@ if perfil == 'Supervisor':
 else:
     eventos = session.query(Eventos).filter_by(igreja_id=igreja_id).order_by(Eventos.data.asc()).all()
     escalas = session.query(Escalas).filter_by(igreja_id=igreja_id).all()
+
+nome_participante = st.session_state['nome']
+if nome_participante and nome_participante.strip():
+        eventos = [
+            e for e in eventos
+            if any(
+                nome_participante.lower() in escala.participante.nome.lower()
+                for escala in e.escalas if escala.participante
+            )
+        ]
+
 if not eventos:
     st.warning("Nenhum evento encontrado.")
     st.stop()
@@ -31,7 +42,7 @@ if not eventos:
 with st.expander("Filtros"):
     with st.container(horizontal=True):
         nome_filtro = st.text_input("Filtrar por nome do evento:")
-        nome_participante = st.text_input("Filtrar por participante")
+        nome_participante = st.session_state['nome']
     with st.container(horizontal=True):
         data_inicial = st.date_input("Data Inicial:", value=None, format="DD/MM/YYYY")
         data_final = st.date_input("Data Final:", value=None, format="DD/MM/YYYY")
@@ -49,7 +60,7 @@ with st.expander("Filtros"):
                 for escala in e.escalas if escala.participante
             )
         ]
-
+    
     # Filtro por data inicial/final
     if data_inicial and data_final:
         eventos = [e for e in eventos if data_inicial <= e.data <= data_final]

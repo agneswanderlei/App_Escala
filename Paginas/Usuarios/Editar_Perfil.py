@@ -53,11 +53,16 @@ if usuario:
                 default=[m.id for m in ministerios],
                 format_func=lambda x: next(m.nome for m in ministerios_all if m.id == x)
             )
+            telefone = st.text_input("Nº do telefone", placeholder='Apenas números! Ex. 81988887777',help='Não precisa colocar parênteses e nem traços ex: (81) 98888-7777', max_chars=11)
+
 
         enviar = st.button("Atualizar", key='warning')
 
         if enviar:
             try:
+                if perfil in ['Líder', 'Administrador'] and not telefone:
+                    st.warning('Para líderes e administradores é necessário nº de telefone')
+                    st.stop()
                 usuario.perfil = perfil
                 usuario.ministerios = [session.query(Ministerios).get(mid) for mid in ministerios_selecionados]
                 session.commit()

@@ -7,7 +7,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 
 # --- Configuração Inicial ---
-st.set_page_config(page_title="FLORESCER", initial_sidebar_state='collapsed')
+st.set_page_config(page_title="Sarça", initial_sidebar_state='collapsed', page_icon='sarca2.png')
 # --- Configuração do Autenticador ---
 session = SessionLocal()
 # reduz espaços no topo
@@ -111,7 +111,7 @@ pages = {
         os.path.join('Paginas','Eventos','Editar_Evento.py'),
     ],
     'Escalas': [
-        # os.path.join('Paginas','Escalas','Escalas.py'),
+        os.path.join('Paginas','Escalas','Minhas_Escalas.py'),
         os.path.join('Paginas','Escalas','Adicionar_Escala.py'),
         os.path.join('Paginas','Escalas','Editar_Escala.py'),
     ],
@@ -157,9 +157,97 @@ if st.session_state.get('authentication_status'):
         pg = st.navigation(pages, position='top', expanded=False)
         pg.run()
     elif perfil_usuario == 'Administrador':
+        pages = {
+            'Home': [
+                os.path.join('Paginas','Home','Home.py')
+            ],
+            'Grupos': [
+                os.path.join('Paginas','Grupos','Grupos.py'),
+                os.path.join('Paginas','Grupos','Adicionar_Grupo.py'),
+                os.path.join('Paginas','Grupos','Editar_Grupo.py'),
+
+            ],
+            'Funções': [
+                os.path.join('Paginas','Funcoes','Funções.py'),
+                os.path.join('Paginas','Funcoes','Adicionar_Função.py'),
+                os.path.join('Paginas','Funcoes','Editar_Função.py'),
+
+            ],
+            
+            'Participantes': [
+                os.path.join('Paginas','Participantes','Participantes.py'),
+                os.path.join('Paginas','Participantes','Adicionar_Participante.py'),
+                os.path.join('Paginas','Participantes','Editar_Participante.py'),
+
+            ],
+            'Indisponibilidades': [
+                os.path.join('Paginas','Indisponibilidade','Indisponibilidades.py'),
+                os.path.join('Paginas','Indisponibilidade','Adicionar_Indisponibilidade.py'),
+                os.path.join('Paginas','Indisponibilidade','Editar_Indisponibilidade.py'),
+            ],
+            'Eventos': [
+                os.path.join('Paginas','Eventos','Eventos.py'),
+                os.path.join('Paginas','Eventos','Adicionar_Evento.py'),
+                os.path.join('Paginas','Eventos','Editar_Evento.py'),
+            ],
+            'Escalas': [
+                os.path.join('Paginas','Escalas','Minhas_Escalas.py'),
+                os.path.join('Paginas','Escalas','Adicionar_Escala.py'),
+                os.path.join('Paginas','Escalas','Editar_Escala.py'),
+            ],
+            'Liturgia': [
+                # os.path.join('Paginas','Liturgias','Liturgias.py'),
+                os.path.join('Paginas','Liturgias','Adicionar_Liturgia.py'),
+                os.path.join('Paginas','Liturgias','Editar_Liturgia.py'),
+            ],
+            'Usuários': [
+                os.path.join('Paginas','Usuarios','Home_Usuários.py'),
+                os.path.join('Paginas','Usuarios','Adicionar_Usuários.py'),
+                os.path.join('Paginas','Usuarios','Editar_Contato.py'),
+                os.path.join('Paginas','Usuarios','Editar_Perfil.py'),
+                os.path.join('Paginas','Usuarios','Editar_Senha.py'),
+                os.path.join('Paginas','Usuarios','Excluir_Usuários.py'),
+
+            ]
+        }
         pg = st.navigation(pages, position='top', expanded=False)
         pg.run()
     elif perfil_usuario == 'Líder':
+        pages = {
+            'Home': [
+                os.path.join('Paginas','Home','Home.py')
+            ],
+            
+            'Indisponibilidades': [
+                os.path.join('Paginas','Indisponibilidade','Indisponibilidades.py'),
+                os.path.join('Paginas','Indisponibilidade','Adicionar_Indisponibilidade.py'),
+                os.path.join('Paginas','Indisponibilidade','Editar_Indisponibilidade.py'),
+            ],
+            'Eventos': [
+                os.path.join('Paginas','Eventos','Eventos.py'),
+                os.path.join('Paginas','Eventos','Adicionar_Evento.py'),
+                os.path.join('Paginas','Eventos','Editar_Evento.py'),
+            ],
+            'Escalas': [
+                os.path.join('Paginas','Escalas','Minhas_Escalas.py'),
+                os.path.join('Paginas','Escalas','Adicionar_Escala.py'),
+                os.path.join('Paginas','Escalas','Editar_Escala.py'),
+            ],
+            'Liturgia': [
+                # os.path.join('Paginas','Liturgias','Liturgias.py'),
+                os.path.join('Paginas','Liturgias','Adicionar_Liturgia.py'),
+                os.path.join('Paginas','Liturgias','Editar_Liturgia.py'),
+            ],
+            'Usuários': [
+                # os.path.join('Paginas','Usuarios','Home_Usuários.py'),
+                # os.path.join('Paginas','Usuarios','Adicionar_Usuários.py'),
+                # os.path.join('Paginas','Usuarios','Editar_Contato.py'),
+                # os.path.join('Paginas','Usuarios','Editar_Perfil.py'),
+                os.path.join('Paginas','Usuarios','Editar_Senha.py'),
+                # os.path.join('Paginas','Usuarios','Excluir_Usuários.py'),
+
+            ]
+        }
         pg = st.navigation(pages, position='top', expanded=False)
         pg.run()
     else:
@@ -167,18 +255,24 @@ if st.session_state.get('authentication_status'):
             'Home': [
                 os.path.join('Paginas','Home','Home.py')
             ],
+            
             'Indisponibilidades': [
                 os.path.join('Paginas','Indisponibilidade','Indisponibilidades.py'),
                 os.path.join('Paginas','Indisponibilidade','Adicionar_Indisponibilidade.py'),
                 os.path.join('Paginas','Indisponibilidade','Editar_Indisponibilidade.py'),
             ],
+            'Eventos': [
+                os.path.join('Paginas','Eventos','Eventos.py'),
+                # os.path.join('Paginas','Eventos','Adicionar_Evento.py'),
+                # os.path.join('Paginas','Eventos','Editar_Evento.py'),
+            ],
+            'Escalas': [
+                os.path.join('Paginas','Escalas','Minhas_Escalas.py'),
+                # os.path.join('Paginas','Escalas','Adicionar_Escala.py'),
+                # os.path.join('Paginas','Escalas','Editar_Escala.py'),
+            ],
             'Usuários': [
-                os.path.join('paginas','Usuarios','Home_Usuários.py'),
-                # os.path.join('paginas','Usuarios','Adicionar_Usuários.py'),
-                # os.path.join('paginas','Usuarios','Editar_Perfil.py'),
-                os.path.join('paginas','Usuarios','Editar_Senha.py'),
-                # os.path.join('paginas','Usuarios','Excluir_Usuarios.py'),
-
+                os.path.join('Paginas','Usuarios','Editar_Senha.py'),
             ]
         }
         pg = st.navigation(pages, position='top', expanded=False)

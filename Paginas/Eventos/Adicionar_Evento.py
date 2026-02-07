@@ -2,7 +2,7 @@ import streamlit as st
 from db import SessionLocal
 from models import Eventos
 import os, time
-st.set_page_config(layout='centered')
+st.set_page_config(layout='centered', page_icon='sarca2.png')
 session = SessionLocal()
 
 st.title("📋 Cadastro de Eventos")
