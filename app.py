@@ -7,20 +7,25 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 
 # --- Configuração Inicial ---
-st.set_page_config(page_title="Sarça", initial_sidebar_state='collapsed', page_icon='sarca2.png')
+st.set_page_config(page_title="Sarça", initial_sidebar_state='collapsed', page_icon='sarca2.png', layout='wide')
 # --- Configuração do Autenticador ---
 session = SessionLocal()
 # reduz espaços no topo
-st.markdown("""
-    <style>
-        .block-container {
-            padding-top: 2rem;
-        }
-        h1 {
-            margin-top: 100;
-        }
-    </style>
-""", unsafe_allow_html=True)
+# st.markdown("""
+#     <style>
+#         .block-container {
+#             padding-top: 2rem;
+#         }
+#         h1 {
+#             margin-top: 100;
+#         }
+#     </style>
+# """, unsafe_allow_html=True)
+col1, col2 = st.columns([2,1])
+with col1:
+    # with st.container(horizontal_alignment='center'):
+    st.image("sarca2.png", width=600)
+
 # Inicializa o scheduler apenas uma vez
 if "scheduler" not in st.session_state:
     jobstores = {
@@ -131,160 +136,164 @@ pages = {
     ]
 }
 
+with col2:
+    st.markdown("<h2>🔥 Bem-vindo ao Sarça</h2>", unsafe_allow_html=True)
+    st.write("Aqui você pode gerenciar **eventos**, **escalas** e **liturgias** de forma simples e intuitiva.")
+    st.write("Faça login para acessar as funcionalidades.")
 
-authenticator.login(captcha=False, max_login_attempts=3)
+    authenticator.login(captcha=False, max_login_attempts=3)
 
-if st.session_state.get('authentication_status'):
-    cpf_logado = st.session_state['username']
-    usuario_logado = session.query(Usuarios).filter_by(cpf=cpf_logado).first()
+    if st.session_state.get('authentication_status'):
+        cpf_logado = st.session_state['username']
+        usuario_logado = session.query(Usuarios).filter_by(cpf=cpf_logado).first()
 
-    st.session_state['perfil'] = usuario_logado.perfil
-    st.session_state['nome'] = usuario_logado.nome
-    st.session_state['telefone'] = usuario_logado.telefone
-    st.session_state['igreja'] = usuario_logado.igreja_id
-    st.session_state['user_id'] = usuario_logado.id 
+        st.session_state['perfil'] = usuario_logado.perfil
+        st.session_state['nome'] = usuario_logado.nome
+        st.session_state['telefone'] = usuario_logado.telefone
+        st.session_state['igreja'] = usuario_logado.igreja_id
+        st.session_state['user_id'] = usuario_logado.id 
 
-    nome_igreja = session.query(Igrejas).get(st.session_state.igreja)
-    with st.sidebar:
-        st.markdown("### 👤 Usuário Logado")
-        st.write(f"**Nome:** {st.session_state.nome}")
-        st.write(f"**Perfil:** {st.session_state.perfil}")
-        st.write(f"**Igreja:** {nome_igreja.nome}")
+        nome_igreja = session.query(Igrejas).get(st.session_state.igreja)
+        with st.sidebar:
+            st.markdown("### 👤 Usuário Logado")
+            st.write(f"**Nome:** {st.session_state.nome}")
+            st.write(f"**Perfil:** {st.session_state.perfil}")
+            st.write(f"**Igreja:** {nome_igreja.nome}")
 
-    perfil_usuario = credenciais['usernames'][st.session_state['username']]['perfil']
-    st.session_state['perfil'] = perfil_usuario
-    if perfil_usuario == 'Supervisor':
-        pg = st.navigation(pages, position='top', expanded=False)
-        pg.run()
-    elif perfil_usuario == 'Administrador':
-        pages = {
-            'Home': [
-                os.path.join('Paginas','Home','Home.py')
-            ],
-            'Grupos': [
-                os.path.join('Paginas','Grupos','Grupos.py'),
-                os.path.join('Paginas','Grupos','Adicionar_Grupo.py'),
-                os.path.join('Paginas','Grupos','Editar_Grupo.py'),
+        perfil_usuario = credenciais['usernames'][st.session_state['username']]['perfil']
+        st.session_state['perfil'] = perfil_usuario
+        if perfil_usuario == 'Supervisor':
+            pg = st.navigation(pages, position='top', expanded=False)
+            pg.run()
+        elif perfil_usuario == 'Administrador':
+            pages = {
+                'Home': [
+                    os.path.join('Paginas','Home','Home.py')
+                ],
+                'Grupos': [
+                    os.path.join('Paginas','Grupos','Grupos.py'),
+                    os.path.join('Paginas','Grupos','Adicionar_Grupo.py'),
+                    os.path.join('Paginas','Grupos','Editar_Grupo.py'),
 
-            ],
-            'Funções': [
-                os.path.join('Paginas','Funcoes','Funções.py'),
-                os.path.join('Paginas','Funcoes','Adicionar_Função.py'),
-                os.path.join('Paginas','Funcoes','Editar_Função.py'),
+                ],
+                'Funções': [
+                    os.path.join('Paginas','Funcoes','Funções.py'),
+                    os.path.join('Paginas','Funcoes','Adicionar_Função.py'),
+                    os.path.join('Paginas','Funcoes','Editar_Função.py'),
 
-            ],
-            
-            'Participantes': [
-                os.path.join('Paginas','Participantes','Participantes.py'),
-                os.path.join('Paginas','Participantes','Adicionar_Participante.py'),
-                os.path.join('Paginas','Participantes','Editar_Participante.py'),
+                ],
+                
+                'Participantes': [
+                    os.path.join('Paginas','Participantes','Participantes.py'),
+                    os.path.join('Paginas','Participantes','Adicionar_Participante.py'),
+                    os.path.join('Paginas','Participantes','Editar_Participante.py'),
 
-            ],
-            'Indisponibilidades': [
-                os.path.join('Paginas','Indisponibilidade','Indisponibilidades.py'),
-                os.path.join('Paginas','Indisponibilidade','Adicionar_Indisponibilidade.py'),
-                os.path.join('Paginas','Indisponibilidade','Editar_Indisponibilidade.py'),
-            ],
-            'Eventos': [
-                os.path.join('Paginas','Eventos','Eventos.py'),
-                os.path.join('Paginas','Eventos','Adicionar_Evento.py'),
-                os.path.join('Paginas','Eventos','Editar_Evento.py'),
-            ],
-            'Escalas': [
-                os.path.join('Paginas','Escalas','Minhas_Escalas.py'),
-                os.path.join('Paginas','Escalas','Adicionar_Escala.py'),
-                os.path.join('Paginas','Escalas','Editar_Escala.py'),
-            ],
-            'Liturgia': [
-                # os.path.join('Paginas','Liturgias','Liturgias.py'),
-                os.path.join('Paginas','Liturgias','Adicionar_Liturgia.py'),
-                os.path.join('Paginas','Liturgias','Editar_Liturgia.py'),
-            ],
-            'Usuários': [
-                os.path.join('Paginas','Usuarios','Home_Usuários.py'),
-                os.path.join('Paginas','Usuarios','Adicionar_Usuários.py'),
-                os.path.join('Paginas','Usuarios','Editar_Contato.py'),
-                os.path.join('Paginas','Usuarios','Editar_Perfil.py'),
-                os.path.join('Paginas','Usuarios','Editar_Senha.py'),
-                os.path.join('Paginas','Usuarios','Excluir_Usuários.py'),
+                ],
+                'Indisponibilidades': [
+                    os.path.join('Paginas','Indisponibilidade','Indisponibilidades.py'),
+                    os.path.join('Paginas','Indisponibilidade','Adicionar_Indisponibilidade.py'),
+                    os.path.join('Paginas','Indisponibilidade','Editar_Indisponibilidade.py'),
+                ],
+                'Eventos': [
+                    os.path.join('Paginas','Eventos','Eventos.py'),
+                    os.path.join('Paginas','Eventos','Adicionar_Evento.py'),
+                    os.path.join('Paginas','Eventos','Editar_Evento.py'),
+                ],
+                'Escalas': [
+                    os.path.join('Paginas','Escalas','Minhas_Escalas.py'),
+                    os.path.join('Paginas','Escalas','Adicionar_Escala.py'),
+                    os.path.join('Paginas','Escalas','Editar_Escala.py'),
+                ],
+                'Liturgia': [
+                    # os.path.join('Paginas','Liturgias','Liturgias.py'),
+                    os.path.join('Paginas','Liturgias','Adicionar_Liturgia.py'),
+                    os.path.join('Paginas','Liturgias','Editar_Liturgia.py'),
+                ],
+                'Usuários': [
+                    os.path.join('Paginas','Usuarios','Home_Usuários.py'),
+                    os.path.join('Paginas','Usuarios','Adicionar_Usuários.py'),
+                    os.path.join('Paginas','Usuarios','Editar_Contato.py'),
+                    os.path.join('Paginas','Usuarios','Editar_Perfil.py'),
+                    os.path.join('Paginas','Usuarios','Editar_Senha.py'),
+                    os.path.join('Paginas','Usuarios','Excluir_Usuários.py'),
 
-            ]
-        }
-        pg = st.navigation(pages, position='top', expanded=False)
-        pg.run()
-    elif perfil_usuario == 'Líder':
-        pages = {
-            'Home': [
-                os.path.join('Paginas','Home','Home.py')
-            ],
-            
-            'Indisponibilidades': [
-                os.path.join('Paginas','Indisponibilidade','Indisponibilidades.py'),
-                os.path.join('Paginas','Indisponibilidade','Adicionar_Indisponibilidade.py'),
-                os.path.join('Paginas','Indisponibilidade','Editar_Indisponibilidade.py'),
-            ],
-            'Eventos': [
-                os.path.join('Paginas','Eventos','Eventos.py'),
-                os.path.join('Paginas','Eventos','Adicionar_Evento.py'),
-                os.path.join('Paginas','Eventos','Editar_Evento.py'),
-            ],
-            'Escalas': [
-                os.path.join('Paginas','Escalas','Minhas_Escalas.py'),
-                os.path.join('Paginas','Escalas','Adicionar_Escala.py'),
-                os.path.join('Paginas','Escalas','Editar_Escala.py'),
-            ],
-            'Funções': [
-                os.path.join('Paginas','Funcoes','Funções.py'),
-            ],
-            'Liturgia': [
-                # os.path.join('Paginas','Liturgias','Liturgias.py'),
-                os.path.join('Paginas','Liturgias','Adicionar_Liturgia.py'),
-                os.path.join('Paginas','Liturgias','Editar_Liturgia.py'),
-            ],
-            'Usuários': [
-                # os.path.join('Paginas','Usuarios','Home_Usuários.py'),
-                # os.path.join('Paginas','Usuarios','Adicionar_Usuários.py'),
-                # os.path.join('Paginas','Usuarios','Editar_Contato.py'),
-                # os.path.join('Paginas','Usuarios','Editar_Perfil.py'),
-                os.path.join('Paginas','Usuarios','Editar_Senha.py'),
-                # os.path.join('Paginas','Usuarios','Excluir_Usuários.py'),
+                ]
+            }
+            pg = st.navigation(pages, position='top', expanded=False)
+            pg.run()
+        elif perfil_usuario == 'Líder':
+            pages = {
+                'Home': [
+                    os.path.join('Paginas','Home','Home.py')
+                ],
+                
+                'Indisponibilidades': [
+                    os.path.join('Paginas','Indisponibilidade','Indisponibilidades.py'),
+                    os.path.join('Paginas','Indisponibilidade','Adicionar_Indisponibilidade.py'),
+                    os.path.join('Paginas','Indisponibilidade','Editar_Indisponibilidade.py'),
+                ],
+                'Eventos': [
+                    os.path.join('Paginas','Eventos','Eventos.py'),
+                    os.path.join('Paginas','Eventos','Adicionar_Evento.py'),
+                    os.path.join('Paginas','Eventos','Editar_Evento.py'),
+                ],
+                'Escalas': [
+                    os.path.join('Paginas','Escalas','Minhas_Escalas.py'),
+                    os.path.join('Paginas','Escalas','Adicionar_Escala.py'),
+                    os.path.join('Paginas','Escalas','Editar_Escala.py'),
+                ],
+                'Funções': [
+                    os.path.join('Paginas','Funcoes','Funções.py'),
+                ],
+                'Liturgia': [
+                    # os.path.join('Paginas','Liturgias','Liturgias.py'),
+                    os.path.join('Paginas','Liturgias','Adicionar_Liturgia.py'),
+                    os.path.join('Paginas','Liturgias','Editar_Liturgia.py'),
+                ],
+                'Usuários': [
+                    # os.path.join('Paginas','Usuarios','Home_Usuários.py'),
+                    # os.path.join('Paginas','Usuarios','Adicionar_Usuários.py'),
+                    # os.path.join('Paginas','Usuarios','Editar_Contato.py'),
+                    # os.path.join('Paginas','Usuarios','Editar_Perfil.py'),
+                    os.path.join('Paginas','Usuarios','Editar_Senha.py'),
+                    # os.path.join('Paginas','Usuarios','Excluir_Usuários.py'),
 
-            ]
-        }
-        pg = st.navigation(pages, position='top', expanded=False)
-        pg.run()
-    else:
-        pages = {
-            'Home': [
-                os.path.join('Paginas','Home','Home.py')
-            ],
-            
-            'Indisponibilidades': [
-                os.path.join('Paginas','Indisponibilidade','Indisponibilidades.py'),
-                os.path.join('Paginas','Indisponibilidade','Adicionar_Indisponibilidade.py'),
-                os.path.join('Paginas','Indisponibilidade','Editar_Indisponibilidade.py'),
-            ],
-            'Eventos': [
-                os.path.join('Paginas','Eventos','Eventos.py'),
-                # os.path.join('Paginas','Eventos','Adicionar_Evento.py'),
-                # os.path.join('Paginas','Eventos','Editar_Evento.py'),
-            ],
-            'Escalas': [
-                os.path.join('Paginas','Escalas','Minhas_Escalas.py'),
-                # os.path.join('Paginas','Escalas','Adicionar_Escala.py'),
-                # os.path.join('Paginas','Escalas','Editar_Escala.py'),
-            ],
-            'Funções': [
-                os.path.join('Paginas','Funcoes','Funções.py'),
-            ],
-            'Usuários': [
-                os.path.join('Paginas','Usuarios','Editar_Senha.py'),
-            ]
-        }
-        pg = st.navigation(pages, position='top', expanded=False)
-        pg.run()
-    authenticator.logout('Sair', location='sidebar', use_container_width=False)
-elif st.session_state.get('authentication_status') is False:
-    st.error('🚫 Login inválido. Verifique as credenciais.')
-elif st.session_state.get('authentication_status') is None:
-    st.warning('Os campos devem ser preenchidos antes de continuar.')
+                ]
+            }
+            pg = st.navigation(pages, position='top', expanded=False)
+            pg.run()
+        else:
+            pages = {
+                'Home': [
+                    os.path.join('Paginas','Home','Home.py')
+                ],
+                
+                'Indisponibilidades': [
+                    os.path.join('Paginas','Indisponibilidade','Indisponibilidades.py'),
+                    os.path.join('Paginas','Indisponibilidade','Adicionar_Indisponibilidade.py'),
+                    os.path.join('Paginas','Indisponibilidade','Editar_Indisponibilidade.py'),
+                ],
+                'Eventos': [
+                    os.path.join('Paginas','Eventos','Eventos.py'),
+                    # os.path.join('Paginas','Eventos','Adicionar_Evento.py'),
+                    # os.path.join('Paginas','Eventos','Editar_Evento.py'),
+                ],
+                'Escalas': [
+                    os.path.join('Paginas','Escalas','Minhas_Escalas.py'),
+                    # os.path.join('Paginas','Escalas','Adicionar_Escala.py'),
+                    # os.path.join('Paginas','Escalas','Editar_Escala.py'),
+                ],
+                'Funções': [
+                    os.path.join('Paginas','Funcoes','Funções.py'),
+                ],
+                'Usuários': [
+                    os.path.join('Paginas','Usuarios','Editar_Senha.py'),
+                ]
+            }
+            pg = st.navigation(pages, position='top', expanded=False)
+            pg.run()
+        authenticator.logout('Sair', location='sidebar', use_container_width=False)
+    elif st.session_state.get('authentication_status') is False:
+        st.error('🚫 Login inválido. Verifique as credenciais.')
+    elif st.session_state.get('authentication_status') is None:
+        st.warning('Os campos devem ser preenchidos antes de continuar.')
