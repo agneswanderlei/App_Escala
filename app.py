@@ -233,6 +233,9 @@ if st.session_state.get('authentication_status'):
                 os.path.join('Paginas','Escalas','Adicionar_Escala.py'),
                 os.path.join('Paginas','Escalas','Editar_Escala.py'),
             ],
+            'Funções': [
+                os.path.join('Paginas','Funcoes','Funções.py'),
+            ],
             'Liturgia': [
                 # os.path.join('Paginas','Liturgias','Liturgias.py'),
                 os.path.join('Paginas','Liturgias','Adicionar_Liturgia.py'),
@@ -270,6 +273,9 @@ if st.session_state.get('authentication_status'):
                 os.path.join('Paginas','Escalas','Minhas_Escalas.py'),
                 # os.path.join('Paginas','Escalas','Adicionar_Escala.py'),
                 # os.path.join('Paginas','Escalas','Editar_Escala.py'),
+            ],
+            'Funções': [
+                os.path.join('Paginas','Funcoes','Funções.py'),
             ],
             'Usuários': [
                 os.path.join('Paginas','Usuarios','Editar_Senha.py'),
