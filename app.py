@@ -17,12 +17,29 @@ session = SessionLocal()
 
 # Inicializa o scheduler apenas uma vez
 if "scheduler" not in st.session_state:
+    # Verifica se deve usar PostgreSQL ou SQLite
+    USE_POSTGRES = os.getenv("USE_POSTGRES", "false").lower() == "true"
+    
+    if USE_POSTGRES:
+        # URL do PostgreSQL para o jobstore
+        db_user = os.getenv('DATABASE_USER')
+        db_password = os.getenv('DATABASE_PASSWORD')
+        db_host = os.getenv('DATABASE_HOST')
+        db_port = os.getenv('DATABASE_PORT', '5432')
+        db_name = os.getenv('DATABASE_NAME')
+        
+        jobstore_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+    else:
+        # SQLite local
+        os.makedirs('Banco_dados', exist_ok=True)
+        jobstore_url = 'sqlite:///Banco_dados/jobs.sqlite'
+    
     jobstores = {
-        'default': SQLAlchemyJobStore(url='sqlite:///Banco_dados/jobs.sqlite')
+        'default': SQLAlchemyJobStore(url=jobstore_url)
     }
+    
     st.session_state.scheduler = BackgroundScheduler(jobstores=jobstores)
     st.session_state.scheduler.start()
-
 # consultar banco usuarios
 usuarios = session.query(Usuarios).all()
 if len(usuarios) == 0:
